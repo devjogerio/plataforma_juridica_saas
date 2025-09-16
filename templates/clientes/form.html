@@ -1,0 +1,586 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% if form.instance.pk %}Editar Cliente{% else %}Novo Cliente{% endif %} - Plataforma Jurídica
+{% endblock %}
+
+{% block page_title %}
+{% if form.instance.pk %}Editar Cliente{% else %}Novo Cliente{% endif %}
+{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'clientes:lista' %}">Clientes</a></li>
+{% if form.instance.pk %}
+    <li class="breadcrumb-item"><a href="{% url 'clientes:detalhe' form.instance.pk %}">{{ form.instance.nome_razao_social|truncatechars:20 }}</a></li>
+    <li class="breadcrumb-item active">Editar</li>
+{% else %}
+    <li class="breadcrumb-item active">Novo Cliente</li>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<form method="post" id="cliente-form" novalidate>
+    {% csrf_token %}
+    
+    <!-- Tipo de Pessoa -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0">
+                <i class="bi bi-person-badge me-2"></i>
+                Tipo de Pessoa
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">Tipo de Pessoa *</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="tipo_pessoa" id="tipo_pf" value="PF" 
+                               {% if form.tipo_pessoa.value == 'PF' or not form.tipo_pessoa.value %}checked{% endif %}
+                               onchange="toggleTipoPessoa()">
+                        <label class="btn btn-outline-info" for="tipo_pf">
+                            <i class="bi bi-person me-2"></i>Pessoa Física
+                        </label>
+                        
+                        <input type="radio" class="btn-check" name="tipo_pessoa" id="tipo_pj" value="PJ" 
+                               {% if form.tipo_pessoa.value == 'PJ' %}checked{% endif %}
+                               onchange="toggleTipoPessoa()">
+                        <label class="btn btn-outline-warning" for="tipo_pj">
+                            <i class="bi bi-building me-2"></i>Pessoa Jurídica
+                        </label>
+                    </div>
+                    {% if form.tipo_pessoa.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.tipo_pessoa.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dados Básicos -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0">
+                <i class="bi bi-info-circle me-2"></i>
+                Dados Básicos
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label" id="label-nome">Nome Completo *</label>
+                        <input type="text" name="nome_razao_social" class="form-control {% if form.nome_razao_social.errors %}is-invalid{% endif %}" 
+                               value="{{ form.nome_razao_social.value|default:'' }}" required>
+                        {% if form.nome_razao_social.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.nome_razao_social.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6" id="campo-nome-fantasia" style="display: none;">
+                    <div class="mb-3">
+                        <label class="form-label">Nome Fantasia</label>
+                        <input type="text" name="nome_fantasia" class="form-control {% if form.nome_fantasia.errors %}is-invalid{% endif %}" 
+                               value="{{ form.nome_fantasia.value|default:'' }}">
+                        {% if form.nome_fantasia.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.nome_fantasia.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label" id="label-documento">CPF *</label>
+                        <input type="text" name="cpf_cnpj" class="form-control {% if form.cpf_cnpj.errors %}is-invalid{% endif %}" 
+                               value="{{ form.cpf_cnpj.value|default:'' }}" id="campo-documento" required>
+                        {% if form.cpf_cnpj.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.cpf_cnpj.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label" id="label-rg-ie">RG</label>
+                        <input type="text" name="rg_ie" class="form-control {% if form.rg_ie.errors %}is-invalid{% endif %}" 
+                               value="{{ form.rg_ie.value|default:'' }}">
+                        {% if form.rg_ie.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.rg_ie.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label" id="label-data">Data de Nascimento</label>
+                        <input type="date" name="data_nascimento" class="form-control {% if form.data_nascimento.errors %}is-invalid{% endif %}" 
+                               value="{{ form.data_nascimento.value|date:'Y-m-d'|default:'' }}" id="campo-data">
+                        {% if form.data_nascimento.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.data_nascimento.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Campos específicos para PF -->
+            <div class="row" id="campos-pf">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Estado Civil</label>
+                        <select name="estado_civil" class="form-select {% if form.estado_civil.errors %}is-invalid{% endif %}">
+                            <option value="">Selecione...</option>
+                            <option value="solteiro" {% if form.estado_civil.value == 'solteiro' %}selected{% endif %}>Solteiro(a)</option>
+                            <option value="casado" {% if form.estado_civil.value == 'casado' %}selected{% endif %}>Casado(a)</option>
+                            <option value="divorciado" {% if form.estado_civil.value == 'divorciado' %}selected{% endif %}>Divorciado(a)</option>
+                            <option value="viuvo" {% if form.estado_civil.value == 'viuvo' %}selected{% endif %}>Viúvo(a)</option>
+                            <option value="uniao_estavel" {% if form.estado_civil.value == 'uniao_estavel' %}selected{% endif %}>União Estável</option>
+                        </select>
+                        {% if form.estado_civil.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.estado_civil.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Nacionalidade</label>
+                        <input type="text" name="nacionalidade" class="form-control {% if form.nacionalidade.errors %}is-invalid{% endif %}" 
+                               value="{{ form.nacionalidade.value|default:'' }}" placeholder="Ex: Brasileira">
+                        {% if form.nacionalidade.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.nacionalidade.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Profissão</label>
+                        <input type="text" name="profissao_atividade" class="form-control {% if form.profissao_atividade.errors %}is-invalid{% endif %}" 
+                               value="{{ form.profissao_atividade.value|default:'' }}" id="campo-profissao">
+                        {% if form.profissao_atividade.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.profissao_atividade.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contato -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0">
+                <i class="bi bi-telephone me-2"></i>
+                Informações de Contato
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">E-mail *</label>
+                        <input type="email" name="email" class="form-control {% if form.email.errors %}is-invalid{% endif %}" 
+                               value="{{ form.email.value|default:'' }}" required>
+                        {% if form.email.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.email.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Telefone</label>
+                        <input type="tel" name="telefone" class="form-control {% if form.telefone.errors %}is-invalid{% endif %}" 
+                               value="{{ form.telefone.value|default:'' }}" placeholder="(11) 3333-4444">
+                        {% if form.telefone.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.telefone.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Celular</label>
+                        <input type="tel" name="celular" class="form-control {% if form.celular.errors %}is-invalid{% endif %}" 
+                               value="{{ form.celular.value|default:'' }}" placeholder="(11) 99999-8888">
+                        {% if form.celular.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.celular.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">WhatsApp</label>
+                        <input type="tel" name="whatsapp" class="form-control {% if form.whatsapp.errors %}is-invalid{% endif %}" 
+                               value="{{ form.whatsapp.value|default:'' }}" placeholder="11999998888">
+                        <div class="form-text">Apenas números, sem espaços ou símbolos</div>
+                        {% if form.whatsapp.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.whatsapp.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Endereço -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-geo-alt me-2"></i>
+                    Endereço
+                </h6>
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="buscarCep()">
+                    <i class="bi bi-search me-1"></i>Buscar CEP
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label class="form-label">CEP</label>
+                        <input type="text" name="cep" class="form-control {% if form.cep.errors %}is-invalid{% endif %}" 
+                               value="{{ form.cep.value|default:'' }}" id="campo-cep" placeholder="00000-000">
+                        {% if form.cep.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.cep.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Endereço</label>
+                        <input type="text" name="endereco" class="form-control {% if form.endereco.errors %}is-invalid{% endif %}" 
+                               value="{{ form.endereco.value|default:'' }}" id="campo-endereco">
+                        {% if form.endereco.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.endereco.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label class="form-label">Número</label>
+                        <input type="text" name="numero" class="form-control {% if form.numero.errors %}is-invalid{% endif %}" 
+                               value="{{ form.numero.value|default:'' }}">
+                        {% if form.numero.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.numero.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Complemento</label>
+                        <input type="text" name="complemento" class="form-control {% if form.complemento.errors %}is-invalid{% endif %}" 
+                               value="{{ form.complemento.value|default:'' }}" placeholder="Apto, Sala, etc.">
+                        {% if form.complemento.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.complemento.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Bairro</label>
+                        <input type="text" name="bairro" class="form-control {% if form.bairro.errors %}is-invalid{% endif %}" 
+                               value="{{ form.bairro.value|default:'' }}" id="campo-bairro">
+                        {% if form.bairro.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.bairro.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Cidade</label>
+                        <input type="text" name="cidade" class="form-control {% if form.cidade.errors %}is-invalid{% endif %}" 
+                               value="{{ form.cidade.value|default:'' }}" id="campo-cidade">
+                        {% if form.cidade.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.cidade.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Estado</label>
+                        <select name="uf" class="form-select {% if form.uf.errors %}is-invalid{% endif %}" id="campo-uf">
+                            <option value="">Selecione...</option>
+                            <option value="AC" {% if form.uf.value == 'AC' %}selected{% endif %}>Acre</option>
+                            <option value="AL" {% if form.uf.value == 'AL' %}selected{% endif %}>Alagoas</option>
+                            <option value="AP" {% if form.uf.value == 'AP' %}selected{% endif %}>Amapá</option>
+                            <option value="AM" {% if form.uf.value == 'AM' %}selected{% endif %}>Amazonas</option>
+                            <option value="BA" {% if form.uf.value == 'BA' %}selected{% endif %}>Bahia</option>
+                            <option value="CE" {% if form.uf.value == 'CE' %}selected{% endif %}>Ceará</option>
+                            <option value="DF" {% if form.uf.value == 'DF' %}selected{% endif %}>Distrito Federal</option>
+                            <option value="ES" {% if form.uf.value == 'ES' %}selected{% endif %}>Espírito Santo</option>
+                            <option value="GO" {% if form.uf.value == 'GO' %}selected{% endif %}>Goiás</option>
+                            <option value="MA" {% if form.uf.value == 'MA' %}selected{% endif %}>Maranhão</option>
+                            <option value="MT" {% if form.uf.value == 'MT' %}selected{% endif %}>Mato Grosso</option>
+                            <option value="MS" {% if form.uf.value == 'MS' %}selected{% endif %}>Mato Grosso do Sul</option>
+                            <option value="MG" {% if form.uf.value == 'MG' %}selected{% endif %}>Minas Gerais</option>
+                            <option value="PA" {% if form.uf.value == 'PA' %}selected{% endif %}>Pará</option>
+                            <option value="PB" {% if form.uf.value == 'PB' %}selected{% endif %}>Paraíba</option>
+                            <option value="PR" {% if form.uf.value == 'PR' %}selected{% endif %}>Paraná</option>
+                            <option value="PE" {% if form.uf.value == 'PE' %}selected{% endif %}>Pernambuco</option>
+                            <option value="PI" {% if form.uf.value == 'PI' %}selected{% endif %}>Piauí</option>
+                            <option value="RJ" {% if form.uf.value == 'RJ' %}selected{% endif %}>Rio de Janeiro</option>
+                            <option value="RN" {% if form.uf.value == 'RN' %}selected{% endif %}>Rio Grande do Norte</option>
+                            <option value="RS" {% if form.uf.value == 'RS' %}selected{% endif %}>Rio Grande do Sul</option>
+                            <option value="RO" {% if form.uf.value == 'RO' %}selected{% endif %}>Rondônia</option>
+                            <option value="RR" {% if form.uf.value == 'RR' %}selected{% endif %}>Roraima</option>
+                            <option value="SC" {% if form.uf.value == 'SC' %}selected{% endif %}>Santa Catarina</option>
+                            <option value="SP" {% if form.uf.value == 'SP' %}selected{% endif %}>São Paulo</option>
+                            <option value="SE" {% if form.uf.value == 'SE' %}selected{% endif %}>Sergipe</option>
+                            <option value="TO" {% if form.uf.value == 'TO' %}selected{% endif %}>Tocantins</option>
+                        </select>
+                        {% if form.uf.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.uf.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Observações -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0">
+                <i class="bi bi-chat-text me-2"></i>
+                Observações
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <textarea name="observacoes" class="form-control {% if form.observacoes.errors %}is-invalid{% endif %}" 
+                          rows="4" placeholder="Informações adicionais sobre o cliente...">{{ form.observacoes.value|default:'' }}</textarea>
+                {% if form.observacoes.errors %}
+                    <div class="invalid-feedback">
+                        {{ form.observacoes.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-check">
+                <input type="checkbox" name="ativo" class="form-check-input" id="ativo" 
+                       {% if form.ativo.value or not form.instance.pk %}checked{% endif %}>
+                <label class="form-check-label" for="ativo">
+                    Cliente ativo
+                </label>
+                <div class="form-text">Clientes inativos não aparecem nas listagens principais</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botões de Ação -->
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <a href="{% if form.instance.pk %}{% url 'clientes:detalhe' form.instance.pk %}{% else %}{% url 'clientes:lista' %}{% endif %}" 
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Cancelar
+                    </a>
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-primary" id="btn-salvar">
+                        <i class="bi bi-check-circle me-1"></i>
+                        {% if form.instance.pk %}Atualizar Cliente{% else %}Cadastrar Cliente{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.btn-check:checked + .btn {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: white;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.invalid-feedback {
+    display: block;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Alternar campos baseado no tipo de pessoa
+function toggleTipoPessoa() {
+    const tipoPF = document.getElementById('tipo_pf').checked;
+    const campoNomeFantasia = document.getElementById('campo-nome-fantasia');
+    const camposPF = document.getElementById('campos-pf');
+    const labelNome = document.getElementById('label-nome');
+    const labelDocumento = document.getElementById('label-documento');
+    const labelRgIe = document.getElementById('label-rg-ie');
+    const labelData = document.getElementById('label-data');
+    const campoDocumento = document.getElementById('campo-documento');
+    const campoData = document.getElementById('campo-data');
+    const campoProfissao = document.getElementById('campo-profissao');
+    
+    if (tipoPF) {
+        // Pessoa Física
+        labelNome.textContent = 'Nome Completo *';
+        labelDocumento.textContent = 'CPF *';
+        labelRgIe.textContent = 'RG';
+        labelData.textContent = 'Data de Nascimento';
+        campoNomeFantasia.style.display = 'none';
+        camposPF.style.display = 'block';
+        campoDocumento.placeholder = '000.000.000-00';
+        campoData.name = 'data_nascimento';
+        campoProfissao.placeholder = 'Ex: Advogado, Médico, etc.';
+    } else {
+        // Pessoa Jurídica
+        labelNome.textContent = 'Razão Social *';
+        labelDocumento.textContent = 'CNPJ *';
+        labelRgIe.textContent = 'Inscrição Estadual';
+        labelData.textContent = 'Data de Fundação';
+        campoNomeFantasia.style.display = 'block';
+        camposPF.style.display = 'none';
+        campoDocumento.placeholder = '00.000.000/0000-00';
+        campoData.name = 'data_fundacao';
+        campoProfissao.placeholder = 'Ex: Comércio, Indústria, etc.';
+    }
+}
+
+// Buscar CEP
+function buscarCep() {
+    const cep = document.getElementById('campo-cep').value.replace(/\D/g, '');
+    
+    if (cep.length !== 8) {
+        alert('CEP deve ter 8 dígitos');
+        return;
+    }
+    
+    fetch(`https://viacep.com.br/ws/${cep}/json/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.erro) {
+                alert('CEP não encontrado');
+                return;
+            }
+            
+            document.getElementById('campo-endereco').value = data.logradouro;
+            document.getElementById('campo-bairro').value = data.bairro;
+            document.getElementById('campo-cidade').value = data.localidade;
+            document.getElementById('campo-uf').value = data.uf;
+        })
+        .catch(error => {
+            console.error('Erro ao buscar CEP:', error);
+            alert('Erro ao buscar CEP');
+        });
+}
+
+// Máscaras de input
+function aplicarMascaras() {
+    // Máscara para telefone
+    const telefones = document.querySelectorAll('input[name="telefone"], input[name="celular"]');
+    telefones.forEach(input => {
+        input.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 10) {
+                value = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+            } else {
+                value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+            }
+            e.target.value = value;
+        });
+    });
+    
+    // Máscara para CEP
+    const cep = document.getElementById('campo-cep');
+    cep.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        value = value.replace(/(\d{5})(\d{3})/, '$1-$2');
+        e.target.value = value;
+    });
+    
+    // Máscara para CPF/CNPJ
+    const documento = document.getElementById('campo-documento');
+    documento.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        const tipoPF = document.getElementById('tipo_pf').checked;
+        
+        if (tipoPF) {
+            // CPF
+            value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        } else {
+            // CNPJ
+            value = value.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+        }
+        e.target.value = value;
+    });
+}
+
+// Validação do formulário
+function validarFormulario() {
+    const form = document.getElementById('cliente-form');
+    const btnSalvar = document.getElementById('btn-salvar');
+    
+    form.addEventListener('submit', function(e) {
+        btnSalvar.disabled = true;
+        btnSalvar.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Salvando...';
+    });
+}
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', function() {
+    toggleTipoPessoa();
+    aplicarMascaras();
+    validarFormulario();
+});
+</script>
+{% endblock %}

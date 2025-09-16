@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard de Relatórios{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .template-card {
+        border: 1px solid #e3e6f0;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        background: white;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .template-card:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    
+    .template-type {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .type-processos { background: #e3f2fd; color: #1976d2; }
+    .type-clientes { background: #f3e5f5; color: #7b1fa2; }
+    .type-financeiro { background: #e8f5e8; color: #388e3c; }
+    .type-produtividade { background: #fff3e0; color: #f57c00; }
+    .type-prazos { background: #ffebee; color: #d32f2f; }
+    .type-documentos { background: #f1f8e9; color: #689f38; }
+    .type-personalizado { background: #fce4ec; color: #c2185b; }
+    
+    .execucao-status {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .status-concluido { background: #d4edda; color: #155724; }
+    .status-processando { background: #fff3cd; color: #856404; }
+    .status-erro { background: #f8d7da; color: #721c24; }
+    
+    .quick-actions {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border-radius: 15px;
+        padding: 2rem;
+        color: white;
+    }
+    
+    .action-btn {
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.3);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        text-decoration: none;
+        display: inline-block;
+        margin: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .action-btn:hover {
+        background: rgba(255,255,255,0.3);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-2px);
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Dashboard de Relatórios</h1>
+            <p class="text-muted">Gerencie e execute relatórios personalizados</p>
+        </div>
+        <div>
+            <a href="{% url 'relatorios:template_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Novo Template
+            </a>
+            <a href="{% url 'relatorios:templates' %}" class="btn btn-outline-primary">
+                <i class="fas fa-list"></i> Ver Todos
+            </a>
+        </div>
+    </div>
+    
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="h4 mb-0">{{ total_templates }}</div>
+                        <div class="small">Templates Disponíveis</div>
+                    </div>
+                    <div class="ml-3">
+                        <i class="fas fa-file-alt fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="h4 mb-0">{{ templates_publicos }}</div>
+                        <div class="small">Templates Públicos</div>
+                    </div>
+                    <div class="ml-3">
+                        <i class="fas fa-share-alt fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="h4 mb-0">{{ execucoes_hoje }}</div>
+                        <div class="small">Execuções Hoje</div>
+                    </div>
+                    <div class="ml-3">
+                        <i class="fas fa-play fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="h4 mb-0">{{ dashboards.count }}</div>
+                        <div class="small">Dashboards Personalizados</div>
+                    </div>
+                    <div class="ml-3">
+                        <i class="fas fa-tachometer-alt fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Templates Disponíveis -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Templates Disponíveis</h6>
+                    <a href="{% url 'relatorios:templates' %}" class="btn btn-sm btn-outline-primary">Ver Todos</a>
+                </div>
+                <div class="card-body">
+                    {% if templates %}
+                        <div class="row">
+                            {% for template in templates %}
+                            <div class="col-md-6 mb-3">
+                                <div class="template-card">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="mb-1">{{ template.nome }}</h6>
+                                        <span class="template-type type-{{ template.tipo }}">{{ template.get_tipo_display }}</span>
+                                    </div>
+                                    
+                                    <p class="text-muted small mb-2">{{ template.descricao|truncatechars:80 }}</p>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user"></i> {{ template.usuario_criador.get_full_name|default:template.usuario_criador.username }}
+                                        </small>
+                                        <div>
+                                            <a href="{% url 'relatorios:executar' template.id %}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-play"></i> Executar
+                                            </a>
+                                            {% if template.usuario_criador == request.user or request.user.is_staff %}
+                                            <a href="{% url 'relatorios:template_update' template.id %}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">Nenhum template disponível</p>
+                            <a href="{% url 'relatorios:template_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Criar Primeiro Template
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Ações Rápidas -->
+            <div class="quick-actions mb-4">
+                <h6 class="mb-3">Ações Rápidas</h6>
+                <div class="text-center">
+                    <a href="{% url 'relatorios:processos' %}" class="action-btn">
+                        <i class="fas fa-gavel"></i> Relatório de Processos
+                    </a>
+                    <a href="{% url 'relatorios:clientes' %}" class="action-btn">
+                        <i class="fas fa-users"></i> Relatório de Clientes
+                    </a>
+                    <a href="{% url 'relatorios:financeiro' %}" class="action-btn">
+                        <i class="fas fa-dollar-sign"></i> Relatório Financeiro
+                    </a>
+                    <a href="{% url 'relatorios:produtividade' %}" class="action-btn">
+                        <i class="fas fa-chart-line"></i> Produtividade
+                    </a>
+                    <a href="{% url 'relatorios:dashboards' %}" class="action-btn">
+                        <i class="fas fa-tachometer-alt"></i> Dashboards
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Execuções Recentes -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Execuções Recentes</h6>
+                </div>
+                <div class="card-body">
+                    {% if execucoes_recentes %}
+                        {% for execucao in execucoes_recentes %}
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                            <div class="flex-grow-1">
+                                <div class="font-weight-bold">{{ execucao.template.nome }}</div>
+                                <small class="text-muted">{{ execucao.data_execucao|date:"d/m/Y H:i" }}</small>
+                            </div>
+                            <div class="text-right">
+                                <span class="execucao-status status-{{ execucao.status }}">{{ execucao.get_status_display }}</span>
+                                {% if execucao.status == 'concluido' %}
+                                <br><small class="text-muted">{{ execucao.total_registros }} registros</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-history fa-2x text-muted mb-2"></i>
+                            <p class="text-muted small">Nenhuma execução recente</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Templates Mais Utilizados -->
+            {% if templates_populares %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Templates Mais Utilizados</h6>
+                </div>
+                <div class="card-body">
+                    {% for template in templates_populares %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="flex-grow-1">
+                            <div class="font-weight-bold">{{ template.nome }}</div>
+                            <span class="template-type type-{{ template.tipo }}">{{ template.get_tipo_display }}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="badge badge-primary">{{ template.total_execucoes }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Dashboards Personalizados -->
+            {% if dashboards %}
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Dashboards Personalizados</h6>
+                    <a href="{% url 'relatorios:dashboard_create' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-plus"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% for dashboard in dashboards %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="flex-grow-1">
+                            <a href="{% url 'relatorios:dashboard_detail' dashboard.id %}" class="font-weight-bold text-decoration-none">
+                                {{ dashboard.nome }}
+                                {% if dashboard.padrao %}<i class="fas fa-star text-warning ml-1"></i>{% endif %}
+                            </a>
+                            {% if dashboard.publico %}
+                            <span class="badge badge-info badge-sm ml-1">Público</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh das estatísticas a cada 5 minutos
+setInterval(function() {
+    // Atualizar apenas as estatísticas sem recarregar a página
+    fetch(window.location.href, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        // Atualizar apenas os cards de estatísticas
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newStats = doc.querySelectorAll('.stats-card');
+        const currentStats = document.querySelectorAll('.stats-card');
+        
+        newStats.forEach((newStat, index) => {
+            if (currentStats[index]) {
+                currentStats[index].innerHTML = newStat.innerHTML;
+            }
+        });
+    })
+    .catch(error => console.log('Erro ao atualizar estatísticas:', error));
+}, 300000); // 5 minutos
+</script>
+{% endblock %}

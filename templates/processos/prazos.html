@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+
+{% block title %}Prazos - {{ processo.numero_processo }} - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Prazos do Processo{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'processos:lista' %}">Processos</a></li>
+<li class="breadcrumb-item"><a href="{% url 'processos:detalhe' processo.pk %}">{{ processo.numero_processo }}</a></li>
+<li class="breadcrumb-item active">Prazos</li>
+{% endblock %}
+
+{% block content %}
+<!-- Informações do Processo -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col">
+                <h5 class="text-primary mb-1">{{ processo.numero_processo }}</h5>
+                <p class="text-muted mb-0">
+                    <strong>Cliente:</strong> {{ processo.cliente.nome_razao_social }} | 
+                    <strong>Área:</strong> {{ processo.area_direito }} | 
+                    <strong>Status:</strong> 
+                    <span class="badge bg-{% if processo.status == 'ativo' %}success{% elif processo.status == 'suspenso' %}warning{% else %}secondary{% endif %}">
+                        {{ processo.get_status_display }}
+                    </span>
+                </p>
+            </div>
+            <div class="col-auto">
+                <a href="{% url 'processos:prazo_create' processo.pk %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Novo Prazo
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="pendente" {% if request.GET.status == 'pendente' %}selected{% endif %}>Pendente</option>
+                    <option value="cumprido" {% if request.GET.status == 'cumprido' %}selected{% endif %}>Cumprido</option>
+                    <option value="vencido" {% if request.GET.status == 'vencido' %}selected{% endif %}>Vencido</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tipo</label>
+                <input type="text" name="tipo" class="form-control" value="{{ request.GET.tipo }}" placeholder="Tipo do prazo">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Data Limite</label>
+                <input type="date" name="data_limite" class="form-control" value="{{ request.GET.data_limite }}">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-search me-1"></i>Filtrar
+                </button>
+                <a href="{% url 'processos:prazos' processo.pk %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i>Limpar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Prazos -->
+<div class="card">
+    <div class="card-header">
+        <h6 class="mb-0">
+            <i class="bi bi-clock me-2"></i>
+            Prazos ({{ prazos|length }})
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        {% if prazos %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Descrição</th>
+                            <th>Data Limite</th>
+                            <th>Dias Restantes</th>
+                            <th>Status</th>
+                            <th>Responsável</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prazo in prazos %}
+                        <tr class="{% if prazo.status == 'vencido' %}table-danger{% elif prazo.dias_restantes <= 3 and prazo.status == 'pendente' %}table-warning{% endif %}">
+                            <td>
+                                <strong>{{ prazo.tipo_prazo }}</strong>
+                            </td>
+                            <td>{{ prazo.descricao|truncatechars:50 }}</td>
+                            <td>
+                                <span class="text-nowrap">
+                                    {{ prazo.data_limite|date:"d/m/Y" }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if prazo.status == 'pendente' %}
+                                    {% if prazo.dias_restantes < 0 %}
+                                        <span class="badge bg-danger">{{ prazo.dias_restantes|floatformat:0 }} dias</span>
+                                    {% elif prazo.dias_restantes <= 3 %}
+                                        <span class="badge bg-warning text-dark">{{ prazo.dias_restantes|floatformat:0 }} dias</span>
+                                    {% else %}
+                                        <span class="badge bg-success">{{ prazo.dias_restantes|floatformat:0 }} dias</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if prazo.status == 'pendente' %}warning{% elif prazo.status == 'cumprido' %}success{% else %}danger{% endif %}">
+                                    {{ prazo.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ prazo.responsavel.get_full_name|default:prazo.responsavel.username }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    {% if prazo.status == 'pendente' %}
+                                        <a href="{% url 'processos:cumprir_prazo' processo.pk prazo.pk %}" 
+                                           class="btn btn-outline-success" 
+                                           title="Marcar como Cumprido"
+                                           onclick="return confirm('Confirma que este prazo foi cumprido?')">
+                                            <i class="bi bi-check-circle"></i>
+                                        </a>
+                                    {% endif %}
+                                    <button class="btn btn-outline-primary" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#prazoModal{{ prazo.pk }}"
+                                            title="Ver Detalhes">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-clock text-muted" style="font-size: 3rem;"></i>
+                <h5 class="text-muted mt-3">Nenhum prazo encontrado</h5>
+                <p class="text-muted">Este processo ainda não possui prazos cadastrados.</p>
+                <a href="{% url 'processos:prazo_create' processo.pk %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Adicionar Primeiro Prazo
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modais de Detalhes dos Prazos -->
+{% for prazo in prazos %}
+<div class="modal fade" id="prazoModal{{ prazo.pk }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalhes do Prazo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Tipo:</dt>
+                    <dd class="col-sm-8">{{ prazo.tipo_prazo }}</dd>
+                    
+                    <dt class="col-sm-4">Descrição:</dt>
+                    <dd class="col-sm-8">{{ prazo.descricao }}</dd>
+                    
+                    <dt class="col-sm-4">Data Limite:</dt>
+                    <dd class="col-sm-8">{{ prazo.data_limite|date:"d/m/Y" }}</dd>
+                    
+                    <dt class="col-sm-4">Status:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-{% if prazo.status == 'pendente' %}warning{% elif prazo.status == 'cumprido' %}success{% else %}danger{% endif %}">
+                            {{ prazo.get_status_display }}
+                        </span>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Responsável:</dt>
+                    <dd class="col-sm-8">{{ prazo.responsavel.get_full_name|default:prazo.responsavel.username }}</dd>
+                    
+                    {% if prazo.data_cumprimento %}
+                    <dt class="col-sm-4">Data Cumprimento:</dt>
+                    <dd class="col-sm-8">{{ prazo.data_cumprimento|date:"d/m/Y" }}</dd>
+                    {% endif %}
+                    
+                    <dt class="col-sm-4">Criado em:</dt>
+                    <dd class="col-sm-8">{{ prazo.created_at|date:"d/m/Y H:i" }}</dd>
+                </dl>
+            </div>
+            <div class="modal-footer">
+                {% if prazo.status == 'pendente' %}
+                    <a href="{% url 'processos:cumprir_prazo' processo.pk prazo.pk %}" 
+                       class="btn btn-success"
+                       onclick="return confirm('Confirma que este prazo foi cumprido?')">
+                        <i class="bi bi-check-circle me-2"></i>Marcar como Cumprido
+                    </a>
+                {% endif %}
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.table-responsive {
+    border-radius: 0.375rem;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.btn-group-sm > .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}

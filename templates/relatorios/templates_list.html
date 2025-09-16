@@ -1,0 +1,359 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Templates de Relatórios{% endblock %}
+
+{% block extra_css %}
+<style>
+    .template-card {
+        border: 1px solid #e3e6f0;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        background: white;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .template-card:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    
+    .template-type {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .type-processos { background: #e3f2fd; color: #1976d2; }
+    .type-clientes { background: #f3e5f5; color: #7b1fa2; }
+    .type-financeiro { background: #e8f5e8; color: #388e3c; }
+    .type-produtividade { background: #fff3e0; color: #f57c00; }
+    .type-prazos { background: #ffebee; color: #d32f2f; }
+    .type-documentos { background: #f1f8e9; color: #689f38; }
+    .type-personalizado { background: #fce4ec; color: #c2185b; }
+    
+    .filter-card {
+        background: #f8f9fc;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .search-box {
+        position: relative;
+    }
+    
+    .search-box .form-control {
+        padding-left: 2.5rem;
+        border-radius: 25px;
+        border: 2px solid #e3e6f0;
+    }
+    
+    .search-box .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+    
+    .template-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .template-meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e3e6f0;
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .template-meta .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Templates de Relatórios</h1>
+            <p class="text-muted">Gerencie seus templates de relatórios personalizados</p>
+        </div>
+        <div>
+            <a href="{% url 'relatorios:template_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Novo Template
+            </a>
+            <a href="{% url 'relatorios:dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="filter-card">
+        <form method="get" id="filterForm">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="form-control" name="busca" 
+                               placeholder="Buscar por nome ou descrição..." 
+                               value="{{ request.GET.busca }}">
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <select class="form-control" name="tipo" onchange="document.getElementById('filterForm').submit()">
+                        <option value="">Todos os tipos</option>
+                        <option value="processos" {% if request.GET.tipo == 'processos' %}selected{% endif %}>Processos</option>
+                        <option value="clientes" {% if request.GET.tipo == 'clientes' %}selected{% endif %}>Clientes</option>
+                        <option value="financeiro" {% if request.GET.tipo == 'financeiro' %}selected{% endif %}>Financeiro</option>
+                        <option value="produtividade" {% if request.GET.tipo == 'produtividade' %}selected{% endif %}>Produtividade</option>
+                        <option value="prazos" {% if request.GET.tipo == 'prazos' %}selected{% endif %}>Prazos</option>
+                        <option value="documentos" {% if request.GET.tipo == 'documentos' %}selected{% endif %}>Documentos</option>
+                        <option value="personalizado" {% if request.GET.tipo == 'personalizado' %}selected{% endif %}>Personalizado</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <select class="form-control" name="formato" onchange="document.getElementById('filterForm').submit()">
+                        <option value="">Todos os formatos</option>
+                        <option value="pdf" {% if request.GET.formato == 'pdf' %}selected{% endif %}>PDF</option>
+                        <option value="excel" {% if request.GET.formato == 'excel' %}selected{% endif %}>Excel</option>
+                        <option value="csv" {% if request.GET.formato == 'csv' %}selected{% endif %}>CSV</option>
+                        <option value="html" {% if request.GET.formato == 'html' %}selected{% endif %}>HTML</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="apenas_meus" 
+                               {% if request.GET.apenas_meus %}checked{% endif %}
+                               onchange="document.getElementById('filterForm').submit()">
+                        <label class="form-check-label">Apenas meus</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="apenas_publicos" 
+                               {% if request.GET.apenas_publicos %}checked{% endif %}
+                               onchange="document.getElementById('filterForm').submit()">
+                        <label class="form-check-label">Apenas públicos</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                    <a href="{% url 'relatorios:templates' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Limpar Filtros
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Lista de Templates -->
+    {% if templates %}
+        <div class="row">
+            {% for template in templates %}
+            <div class="col-lg-6 col-xl-4">
+                <div class="template-card">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="flex-grow-1">
+                            <h5 class="mb-1">{{ template.nome }}</h5>
+                            <span class="template-type type-{{ template.tipo }}">{{ template.get_tipo_display }}</span>
+                            {% if template.publico %}
+                            <span class="badge badge-info ml-1">Público</span>
+                            {% endif %}
+                            {% if not template.ativo %}
+                            <span class="badge badge-secondary ml-1">Inativo</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right">
+                                <a class="dropdown-item" href="{% url 'relatorios:executar' template.id %}">
+                                    <i class="fas fa-play"></i> Executar
+                                </a>
+                                {% if template.usuario_criador == request.user or request.user.is_staff %}
+                                <a class="dropdown-item" href="{% url 'relatorios:template_update' template.id %}">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-danger" href="{% url 'relatorios:template_delete' template.id %}">
+                                    <i class="fas fa-trash"></i> Excluir
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p class="text-muted mb-3">{{ template.descricao|truncatechars:120 }}</p>
+                    
+                    <div class="template-actions">
+                        <a href="{% url 'relatorios:executar' template.id %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-play"></i> Executar
+                        </a>
+                        
+                        {% if template.usuario_criador == request.user or request.user.is_staff %}
+                        <a href="{% url 'relatorios:template_update' template.id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        {% endif %}
+                        
+                        <span class="badge badge-light">
+                            <i class="fas fa-file-{{ template.formato_saida }}"></i> {{ template.get_formato_saida_display }}
+                        </span>
+                    </div>
+                    
+                    <div class="template-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-user"></i>
+                            <span>{{ template.usuario_criador.get_full_name|default:template.usuario_criador.username }}</span>
+                        </div>
+                        
+                        <div class="meta-item">
+                            <i class="fas fa-calendar"></i>
+                            <span>{{ template.data_criacao|date:"d/m/Y" }}</span>
+                        </div>
+                        
+                        {% if template.execucoes.count > 0 %}
+                        <div class="meta-item">
+                            <i class="fas fa-play-circle"></i>
+                            <span>{{ template.execucoes.count }} execuções</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Paginação -->
+        {% if is_paginated %}
+        <nav aria-label="Navegação de páginas">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.paginator.num_pages }}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-file-alt"></i>
+            <h4>Nenhum template encontrado</h4>
+            <p>{% if request.GET.busca or request.GET.tipo or request.GET.formato %}Tente ajustar os filtros de busca{% else %}Você ainda não possui templates de relatórios{% endif %}</p>
+            {% if not request.GET.busca and not request.GET.tipo and not request.GET.formato %}
+            <a href="{% url 'relatorios:template_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Criar Primeiro Template
+            </a>
+            {% else %}
+            <a href="{% url 'relatorios:templates' %}" class="btn btn-outline-primary">
+                <i class="fas fa-times"></i> Limpar Filtros
+            </a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-submit do formulário de busca após digitar
+let searchTimeout;
+const searchInput = document.querySelector('input[name="busca"]');
+
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            document.getElementById('filterForm').submit();
+        }, 500);
+    });
+}
+
+// Confirmação antes de excluir template
+document.addEventListener('click', function(e) {
+    if (e.target.closest('a[href*="excluir"]')) {
+        if (!confirm('Tem certeza que deseja excluir este template? Esta ação não pode ser desfeita.')) {
+            e.preventDefault();
+        }
+    }
+});
+
+// Tooltip para ações
+$(function () {
+    $('[data-toggle="tooltip"]').tooltip();
+});
+</script>
+{% endblock %}

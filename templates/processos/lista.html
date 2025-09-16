@@ -1,0 +1,282 @@
+{% extends 'base.html' %}
+
+{% block title %}Processos - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Gestão de Processos{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item active">Processos</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'processos:criar' %}" class="btn btn-primary">
+    <i class="bi bi-plus-circle me-2"></i><span class="d-none d-sm-inline">Novo </span>Processo
+</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media (max-width: 767px) {
+        .processo-card {
+            border: 1px solid #e3e6f0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: white;
+        }
+        
+        .processo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+        
+        .processo-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #6c757d;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+        
+        .btn-group-mobile {
+            display: flex;
+            gap: 0.25rem;
+            margin-top: 0.75rem;
+        }
+        
+        .btn-group-mobile .btn {
+            flex: 1;
+            font-size: 0.75rem;
+            padding: 0.375rem 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Buscar</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       value="{{ request.GET.search }}" placeholder="Número do processo ou cliente">
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Todos</option>
+                    <option value="ativo" {% if request.GET.status == 'ativo' %}selected{% endif %}>Ativo</option>
+                    <option value="suspenso" {% if request.GET.status == 'suspenso' %}selected{% endif %}>Suspenso</option>
+                    <option value="encerrado" {% if request.GET.status == 'encerrado' %}selected{% endif %}>Encerrado</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="area_direito" class="form-label">Área do Direito</label>
+                <input type="text" class="form-control" id="area_direito" name="area_direito" 
+                       value="{{ request.GET.area_direito }}" placeholder="Ex: Civil, Trabalhista">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search me-2"></i>Filtrar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Processos -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-folder me-2"></i>
+            Processos 
+            <span class="badge bg-primary ms-2">{{ processos|length }}</span>
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if processos %}
+            <!-- Desktop Table View -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Número do Processo</th>
+                            <th>Cliente</th>
+                            <th>Tipo</th>
+                            <th>Área do Direito</th>
+                            <th>Status</th>
+                            <th>Data Início</th>
+                            <th>Responsável</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for processo in processos %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'processos:detalhe' processo.pk %}" class="text-decoration-none fw-bold">
+                                    {{ processo.numero_processo }}
+                                </a>
+                            </td>
+                            <td>{{ processo.cliente.nome_razao_social }}</td>
+                            <td>{{ processo.tipo_processo }}</td>
+                            <td>{{ processo.area_direito }}</td>
+                            <td>
+                                {% if processo.status == 'ativo' %}
+                                    <span class="badge bg-success">Ativo</span>
+                                {% elif processo.status == 'suspenso' %}
+                                    <span class="badge bg-warning">Suspenso</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Encerrado</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ processo.data_inicio|date:"d/m/Y" }}</td>
+                            <td>{{ processo.usuario_responsavel.get_full_name }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'processos:detalhe' processo.pk %}" 
+                                       class="btn btn-outline-primary" title="Ver detalhes">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'processos:editar' processo.pk %}" 
+                                       class="btn btn-outline-secondary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'processos:andamentos' processo.pk %}" 
+                                       class="btn btn-outline-info" title="Andamentos">
+                                        <i class="bi bi-list-ul"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Mobile Card View -->
+            <div class="d-md-none p-3">
+                {% for processo in processos %}
+                <div class="processo-card">
+                    <div class="processo-header">
+                        <div>
+                            <a href="{% url 'processos:detalhe' processo.pk %}" class="text-decoration-none fw-bold">
+                                {{ processo.numero_processo }}
+                            </a>
+                        </div>
+                        <div>
+                            {% if processo.status == 'ativo' %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% elif processo.status == 'suspenso' %}
+                                <span class="badge bg-warning">Suspenso</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Encerrado</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="processo-info">
+                        <div class="info-item">
+                            <span class="info-label">Cliente</span>
+                            <span>{{ processo.cliente.nome_razao_social }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Tipo</span>
+                            <span>{{ processo.tipo_processo }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Área</span>
+                            <span>{{ processo.area_direito }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Data Início</span>
+                            <span>{{ processo.data_inicio|date:"d/m/Y" }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="btn-group-mobile">
+                        <a href="{% url 'processos:detalhe' processo.pk %}" class="btn btn-outline-primary">
+                            <i class="bi bi-eye me-1"></i>Ver
+                        </a>
+                        <a href="{% url 'processos:editar' processo.pk %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-pencil me-1"></i>Editar
+                        </a>
+                        <a href="{% url 'processos:andamentos' processo.pk %}" class="btn btn-outline-info">
+                            <i class="bi bi-list-ul me-1"></i>Andamentos
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Paginação -->
+            {% if is_paginated %}
+            <div class="card-footer">
+                <nav aria-label="Paginação de processos">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.area_direito %}&area_direito={{ request.GET.area_direito }}{% endif %}">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.area_direito %}&area_direito={{ request.GET.area_direito }}{% endif %}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">
+                                {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.area_direito %}&area_direito={{ request.GET.area_direito }}{% endif %}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.area_direito %}&area_direito={{ request.GET.area_direito }}{% endif %}">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-folder-x" style="font-size: 4rem; color: #6c757d;"></i>
+                <h4 class="mt-3 text-muted">Nenhum processo encontrado</h4>
+                <p class="text-muted">Comece criando seu primeiro processo.</p>
+                <a href="{% url 'processos:criar' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Criar Primeiro Processo
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

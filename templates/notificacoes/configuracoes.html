@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Configurações de Notificações - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Configurações de Notificações{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'notificacoes:lista' %}">Notificações</a></li>
+<li class="breadcrumb-item active">Configurações</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .config-card {
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .config-header {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 10px 10px 0 0;
+        padding: 20px;
+    }
+    
+    .config-body {
+        padding: 30px;
+    }
+    
+    .form-check {
+        margin-bottom: 15px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+    }
+    
+    .form-check-input:checked {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    
+    .form-check-label {
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .btn-save {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+    }
+    
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .help-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .number-input {
+        max-width: 120px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="config-card">
+                <div class="config-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-gear-fill me-2"></i>
+                        Configurações de Notificações
+                    </h4>
+                    <p class="mb-0 mt-2 opacity-75">
+                        Personalize como e quando você deseja receber notificações
+                    </p>
+                </div>
+                
+                <div class="config-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Seção: Tipos de Notificação -->
+                        <div class="mb-4">
+                            <h5 class="section-title">
+                                <i class="bi bi-bell me-2"></i>
+                                Tipos de Notificação
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        {{ form.receber_prazo_critico }}
+                                        <label class="form-check-label" for="{{ form.receber_prazo_critico.id_for_label }}">
+                                            <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                                            {{ form.receber_prazo_critico.label }}
+                                        </label>
+                                        <div class="help-text">
+                                            Receba alertas quando prazos estiverem próximos do vencimento
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        {{ form.receber_novo_andamento }}
+                                        <label class="form-check-label" for="{{ form.receber_novo_andamento.id_for_label }}">
+                                            <i class="bi bi-arrow-clockwise text-info me-2"></i>
+                                            {{ form.receber_novo_andamento.label }}
+                                        </label>
+                                        <div class="help-text">
+                                            Seja notificado sobre novos andamentos processuais
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        {{ form.receber_documento_upload }}
+                                        <label class="form-check-label" for="{{ form.receber_documento_upload.id_for_label }}">
+                                            <i class="bi bi-file-earmark-arrow-up text-success me-2"></i>
+                                            {{ form.receber_documento_upload.label }}
+                                        </label>
+                                        <div class="help-text">
+                                            Receba notificações quando documentos forem enviados
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        {{ form.receber_financeiro }}
+                                        <label class="form-check-label" for="{{ form.receber_financeiro.id_for_label }}">
+                                            <i class="bi bi-currency-dollar text-success me-2"></i>
+                                            {{ form.receber_financeiro.label }}
+                                        </label>
+                                        <div class="help-text">
+                                            Alertas sobre movimentações financeiras e cobranças
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        {{ form.receber_sistema }}
+                                        <label class="form-check-label" for="{{ form.receber_sistema.id_for_label }}">
+                                            <i class="bi bi-gear text-secondary me-2"></i>
+                                            {{ form.receber_sistema.label }}
+                                        </label>
+                                        <div class="help-text">
+                                            Notificações sobre atualizações e manutenções do sistema
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Seção: Configurações de Entrega -->
+                        <div class="mb-4">
+                            <h5 class="section-title">
+                                <i class="bi bi-envelope me-2"></i>
+                                Configurações de Entrega
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        {{ form.notificacao_email }}
+                                        <label class="form-check-label" for="{{ form.notificacao_email.id_for_label }}">
+                                            <i class="bi bi-envelope-fill text-primary me-2"></i>
+                                            {{ form.notificacao_email.label }}
+                                        </label>
+                                        <div class="help-text">
+                                            Além das notificações no sistema, receba também por email
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.dias_antecedencia_prazo.id_for_label }}" class="form-label fw-bold">
+                                            <i class="bi bi-calendar-event text-warning me-2"></i>
+                                            {{ form.dias_antecedencia_prazo.label }}
+                                        </label>
+                                        {% crispy form.dias_antecedencia_prazo field_class="form-control number-input" %}
+                                        <div class="help-text">
+                                            {{ form.dias_antecedencia_prazo.help_text }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Botões de Ação -->
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <a href="{% url 'notificacoes:lista' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                Voltar
+                            </a>
+                            
+                            <button type="submit" class="btn btn-success btn-save">
+                                <i class="bi bi-check-circle me-2"></i>
+                                Salvar Configurações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Card de Informações Adicionais -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Informações Importantes
+                    </h6>
+                    <ul class="list-unstyled mb-0 text-muted small">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            As configurações são aplicadas imediatamente após salvar
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Você pode alterar essas configurações a qualquer momento
+                        </li>
+                        <li class="mb-0">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Notificações por email respeitam as configurações de tipos selecionados
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animação suave para os checkboxes
+    const checkboxes = document.querySelectorAll('.form-check-input');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const parent = this.closest('.form-check');
+            if (this.checked) {
+                parent.style.borderLeftColor = '#28a745';
+                parent.style.backgroundColor = '#f8fff9';
+            } else {
+                parent.style.borderLeftColor = '#007bff';
+                parent.style.backgroundColor = '#f8f9fa';
+            }
+        });
+    });
+    
+    // Validação do campo de dias de antecedência
+    const diasInput = document.querySelector('input[name="dias_antecedencia_prazo"]');
+    if (diasInput) {
+        diasInput.addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value < 1) {
+                this.value = 1;
+            } else if (value > 30) {
+                this.value = 30;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

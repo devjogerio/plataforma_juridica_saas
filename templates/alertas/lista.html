@@ -1,0 +1,871 @@
+{% extends 'base.html' %}
+
+{% block title %}Alertas e Lembretes - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Alertas e Lembretes{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item active">Alertas</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .alert-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+        border-left: 4px solid #007bff;
+    }
+    
+    .alert-card.urgente {
+        border-left-color: #dc3545;
+        background: linear-gradient(135deg, rgba(220, 53, 69, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+    }
+    
+    .alert-card.importante {
+        border-left-color: #ffc107;
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+    }
+    
+    .alert-card.normal {
+        border-left-color: #28a745;
+        background: linear-gradient(135deg, rgba(40, 167, 69, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+    }
+    
+    .alert-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+    }
+    
+    .filters-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .stats-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .urgente .stats-number {
+        color: #dc3545;
+    }
+    
+    .importante .stats-number {
+        color: #ffc107;
+    }
+    
+    .normal .stats-number {
+        color: #28a745;
+    }
+    
+    .info .stats-number {
+        color: #17a2b8;
+    }
+    
+    .alert-priority {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+    
+    .priority-urgente {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .priority-importante {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    
+    .priority-normal {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .alert-status {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-ativo {
+        background-color: #17a2b8;
+        color: white;
+    }
+    
+    .status-concluido {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .status-cancelado {
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    .alert-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    
+    .btn-sm {
+        padding: 5px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .quick-actions {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-left: 30px;
+        margin-bottom: 20px;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: 8px;
+        top: 8px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #007bff;
+    }
+    
+    .timeline-item::after {
+        content: '';
+        position: absolute;
+        left: 11px;
+        top: 16px;
+        width: 2px;
+        height: calc(100% - 8px);
+        background-color: #e9ecef;
+    }
+    
+    .timeline-item:last-child::after {
+        display: none;
+    }
+    
+    .timeline-content {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+    }
+    
+    .alert-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-size: 1.2rem;
+    }
+    
+    .icon-urgente {
+        background-color: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+    
+    .icon-importante {
+        background-color: rgba(255, 193, 7, 0.1);
+        color: #ffc107;
+    }
+    
+    .icon-normal {
+        background-color: rgba(40, 167, 69, 0.1);
+        color: #28a745;
+    }
+    
+    .floating-add-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        transition: all 0.3s ease;
+        z-index: 1000;
+    }
+    
+    .floating-add-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 25px rgba(0,0,0,0.4);
+    }
+    
+    .alert-date {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 10px;
+    }
+    
+    .alert-description {
+        margin-bottom: 15px;
+        line-height: 1.5;
+    }
+    
+    .alert-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .bulk-actions {
+        background: white;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        display: none;
+    }
+    
+    .bulk-actions.show {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card urgente">
+            <div class="stats-number">{{ total_urgentes }}</div>
+            <div class="stats-label">Urgentes</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card importante">
+            <div class="stats-number">{{ total_importantes }}</div>
+            <div class="stats-label">Importantes</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card normal">
+            <div class="stats-number">{{ total_normais }}</div>
+            <div class="stats-label">Normais</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card info">
+            <div class="stats-number">{{ total_hoje }}</div>
+            <div class="stats-label">Para Hoje</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="filters-section">
+    <div class="row">
+        <div class="col-md-12">
+            <h5 class="mb-3">Filtros</h5>
+            <form method="get" id="filtroForm">
+                <div class="row">
+                    <div class="col-md-2">
+                        <label class="form-label">Prioridade</label>
+                        <select name="prioridade" class="form-select">
+                            <option value="">Todas</option>
+                            <option value="urgente" {% if request.GET.prioridade == 'urgente' %}selected{% endif %}>Urgente</option>
+                            <option value="importante" {% if request.GET.prioridade == 'importante' %}selected{% endif %}>Importante</option>
+                            <option value="normal" {% if request.GET.prioridade == 'normal' %}selected{% endif %}>Normal</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="ativo" {% if request.GET.status == 'ativo' %}selected{% endif %}>Ativo</option>
+                            <option value="concluido" {% if request.GET.status == 'concluido' %}selected{% endif %}>Concluído</option>
+                            <option value="cancelado" {% if request.GET.status == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Tipo</label>
+                        <select name="tipo" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="prazo" {% if request.GET.tipo == 'prazo' %}selected{% endif %}>Prazo</option>
+                            <option value="audiencia" {% if request.GET.tipo == 'audiencia' %}selected{% endif %}>Audiência</option>
+                            <option value="pagamento" {% if request.GET.tipo == 'pagamento' %}selected{% endif %}>Pagamento</option>
+                            <option value="documento" {% if request.GET.tipo == 'documento' %}selected{% endif %}>Documento</option>
+                            <option value="reuniao" {% if request.GET.tipo == 'reuniao' %}selected{% endif %}>Reunião</option>
+                            <option value="outro" {% if request.GET.tipo == 'outro' %}selected{% endif %}>Outro</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Data Inicial</label>
+                        <input type="date" name="data_inicial" class="form-control" value="{{ request.GET.data_inicial }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Data Final</label>
+                        <input type="date" name="data_final" class="form-control" value="{{ request.GET.data_final }}">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-light me-2">
+                            <i class="bi bi-search me-1"></i>Filtrar
+                        </button>
+                        <a href="{% url 'alertas:lista' %}" class="btn btn-outline-light">
+                            <i class="bi bi-x-circle me-1"></i>Limpar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="quick-actions">
+    <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Ações Rápidas</h5>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary btn-sm" onclick="toggleBulkActions()">
+                <i class="bi bi-check-square me-1"></i>Seleção Múltipla
+            </button>
+            <a href="{% url 'alertas:criar' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus me-1"></i>Novo Alerta
+            </a>
+            <button class="btn btn-outline-secondary btn-sm" onclick="exportarAlertas()">
+                <i class="bi bi-download me-1"></i>Exportar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Ações em Lote -->
+<div class="bulk-actions" id="bulkActions">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <span id="selectedCount">0</span> alertas selecionados
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-success btn-sm" onclick="marcarComoConcluido()">
+                <i class="bi bi-check me-1"></i>Marcar como Concluído
+            </button>
+            <button class="btn btn-warning btn-sm" onclick="adiarAlertas()">
+                <i class="bi bi-clock me-1"></i>Adiar
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="excluirSelecionados()">
+                <i class="bi bi-trash me-1"></i>Excluir
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Alertas -->
+<div class="row">
+    {% for alerta in alertas %}
+    <div class="col-md-6 col-lg-4">
+        <div class="alert-card {{ alerta.prioridade }}">
+            <div class="d-flex align-items-start">
+                <input type="checkbox" class="form-check-input me-3 bulk-checkbox" value="{{ alerta.id }}" style="display: none;">
+                <div class="alert-icon icon-{{ alerta.prioridade }}">
+                    <i class="bi bi-{% if alerta.tipo == 'prazo' %}calendar-event{% elif alerta.tipo == 'audiencia' %}people{% elif alerta.tipo == 'pagamento' %}credit-card{% elif alerta.tipo == 'documento' %}file-text{% elif alerta.tipo == 'reuniao' %}calendar3{% else %}bell{% endif %}"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="alert-date">
+                        <i class="bi bi-calendar me-1"></i>{{ alerta.data_alerta|date:"d/m/Y H:i" }}
+                    </div>
+                    <h6 class="mb-2">{{ alerta.titulo }}</h6>
+                    <div class="alert-description">
+                        {{ alerta.descricao|truncatechars:100 }}
+                    </div>
+                    
+                    <div class="alert-meta">
+                        <div>
+                            <span class="alert-priority priority-{{ alerta.prioridade }}">{{ alerta.get_prioridade_display }}</span>
+                            <span class="alert-status status-{{ alerta.status }}">{{ alerta.get_status_display }}</span>
+                        </div>
+                        <div class="alert-actions">
+                            {% if alerta.status == 'ativo' %}
+                            <button class="btn btn-success btn-sm" onclick="marcarConcluido({{ alerta.id }})">
+                                <i class="bi bi-check"></i>
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="adiarAlerta({{ alerta.id }})">
+                                <i class="bi bi-clock"></i>
+                            </button>
+                            {% endif %}
+                            <a href="{% url 'alertas:editar' alerta.id %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button class="btn btn-outline-danger btn-sm" onclick="excluirAlerta({{ alerta.id }})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {% if alerta.processo %}
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="bi bi-folder me-1"></i>
+                            <a href="{% url 'processos:detalhe' alerta.processo.id %}">{{ alerta.processo.numero_processo }}</a>
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert-card">
+            <div class="text-center py-4">
+                <i class="bi bi-bell-slash display-4 text-muted mb-3"></i>
+                <h5 class="text-muted">Nenhum alerta encontrado</h5>
+                <p class="text-muted">Não há alertas que correspondam aos filtros selecionados.</p>
+                <a href="{% url 'alertas:criar' %}" class="btn btn-primary">
+                    <i class="bi bi-plus me-1"></i>Criar Primeiro Alerta
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Paginação -->
+{% if is_paginated %}
+<div class="d-flex justify-content-center mt-4">
+    <nav aria-label="Navegação de páginas">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if request.GET.prioridade %}&prioridade={{ request.GET.prioridade }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.data_inicial %}&data_inicial={{ request.GET.data_inicial }}{% endif %}{% if request.GET.data_final %}&data_final={{ request.GET.data_final }}{% endif %}">Primeira</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.prioridade %}&prioridade={{ request.GET.prioridade }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.data_inicial %}&data_inicial={{ request.GET.data_inicial }}{% endif %}{% if request.GET.data_final %}&data_final={{ request.GET.data_final }}{% endif %}">Anterior</a>
+                </li>
+            {% endif %}
+            
+            <li class="page-item active">
+                <span class="page-link">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+            </li>
+            
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.prioridade %}&prioridade={{ request.GET.prioridade }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.data_inicial %}&data_inicial={{ request.GET.data_inicial }}{% endif %}{% if request.GET.data_final %}&data_final={{ request.GET.data_final }}{% endif %}">Próxima</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.prioridade %}&prioridade={{ request.GET.prioridade }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.data_inicial %}&data_inicial={{ request.GET.data_inicial }}{% endif %}{% if request.GET.data_final %}&data_final={{ request.GET.data_final }}{% endif %}">Última</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+
+<!-- Botão Flutuante -->
+<button class="floating-add-btn" onclick="window.location.href='{% url 'alertas:criar' %}'">
+    <i class="bi bi-plus"></i>
+</button>
+
+<!-- Modal de Adiar -->
+<div class="modal fade" id="adiarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Adiar Alerta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="adiarForm">
+                    <div class="mb-3">
+                        <label class="form-label">Nova Data e Hora</label>
+                        <input type="datetime-local" class="form-control" id="novaDataHora" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Motivo (opcional)</label>
+                        <textarea class="form-control" id="motivoAdiamento" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" onclick="confirmarAdiamento()">Adiar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let bulkMode = false;
+let selectedAlerts = [];
+let alertToDefer = null;
+
+// Toggle modo de seleção múltipla
+function toggleBulkActions() {
+    bulkMode = !bulkMode;
+    const checkboxes = document.querySelectorAll('.bulk-checkbox');
+    const bulkActions = document.getElementById('bulkActions');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.style.display = bulkMode ? 'block' : 'none';
+    });
+    
+    if (bulkMode) {
+        bulkActions.classList.add('show');
+    } else {
+        bulkActions.classList.remove('show');
+        selectedAlerts = [];
+        updateSelectedCount();
+    }
+}
+
+// Atualizar contador de selecionados
+function updateSelectedCount() {
+    document.getElementById('selectedCount').textContent = selectedAlerts.length;
+}
+
+// Marcar alerta como concluído
+function marcarConcluido(alertaId) {
+    // Verificar se o usuário está autenticado
+    if (!getCookie('csrftoken')) {
+        alert('Sessão expirada. Faça login novamente.');
+        window.location.href = '/login/';
+        return;
+    }
+    
+    if (confirm('Deseja marcar este alerta como concluído?')) {
+        fetch(`/alertas/marcar-concluido/${alertaId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('Sessão expirada. Faça login novamente.');
+                }
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao marcar alerta como concluído: ' + (data.message || 'Erro desconhecido'));
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            if (error.message.includes('Sessão expirada')) {
+                alert(error.message);
+                window.location.href = '/login/';
+            } else {
+                alert('Erro ao marcar alerta como concluído');
+            }
+        });
+    }
+}
+
+// Adiar alerta
+function adiarAlerta(alertaId) {
+    alertToDefer = alertaId;
+    const modal = new bootstrap.Modal(document.getElementById('adiarModal'));
+    modal.show();
+}
+
+// Confirmar adiamento
+function confirmarAdiamento() {
+    const novaDataHora = document.getElementById('novaDataHora').value;
+    const motivo = document.getElementById('motivoAdiamento').value;
+    
+    if (!novaDataHora) {
+        alert('Por favor, selecione uma nova data e hora');
+        return;
+    }
+    
+    // Verificar se o usuário está autenticado
+    if (!getCookie('csrftoken')) {
+        alert('Sessão expirada. Faça login novamente.');
+        window.location.href = '/login/';
+        return;
+    }
+    
+    fetch(`/alertas/adiar/${alertToDefer}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            nova_data_hora: novaDataHora,
+            motivo: motivo
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                throw new Error('Sessão expirada. Faça login novamente.');
+            }
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erro ao adiar alerta: ' + (data.message || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        if (error.message.includes('Sessão expirada')) {
+            alert(error.message);
+            window.location.href = '/login/';
+        } else {
+            alert('Erro ao adiar alerta');
+        }
+    });
+}
+
+// Excluir alerta
+function excluirAlerta(alertaId) {
+    // Verificar se o usuário está autenticado
+    if (!getCookie('csrftoken')) {
+        alert('Sessão expirada. Faça login novamente.');
+        window.location.href = '/login/';
+        return;
+    }
+    
+    if (confirm('Deseja realmente excluir este alerta?')) {
+        fetch(`/alertas/excluir/${alertaId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('Sessão expirada. Faça login novamente.');
+                }
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao excluir alerta: ' + (data.message || 'Erro desconhecido'));
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            if (error.message.includes('Sessão expirada')) {
+                alert(error.message);
+                window.location.href = '/login/';
+            } else {
+                alert('Erro ao excluir alerta');
+            }
+        });
+    }
+}
+
+// Marcar selecionados como concluído
+function marcarComoConcluido() {
+    if (selectedAlerts.length === 0) {
+        alert('Selecione pelo menos um alerta');
+        return;
+    }
+    
+    // Verificar se o usuário está autenticado
+    if (!getCookie('csrftoken')) {
+        alert('Sessão expirada. Faça login novamente.');
+        window.location.href = '/login/';
+        return;
+    }
+    
+    if (confirm(`Deseja marcar ${selectedAlerts.length} alertas como concluídos?`)) {
+        fetch('/alertas/marcar-multiplos-concluido/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                alertas: selectedAlerts
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao marcar alertas como concluídos');
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao marcar alertas:', error);
+            if (error.message.includes('401') || error.message.includes('403')) {
+                alert('Sessão expirada. Faça login novamente.');
+                window.location.href = '/login/';
+            } else {
+                alert('Erro ao processar solicitação');
+            }
+        });
+    }
+}
+
+// Adiar alertas selecionados
+function adiarAlertas() {
+    if (selectedAlerts.length === 0) {
+        alert('Selecione pelo menos um alerta');
+        return;
+    }
+    
+    alertToDefer = selectedAlerts;
+    const modal = new bootstrap.Modal(document.getElementById('adiarModal'));
+    modal.show();
+}
+
+// Excluir selecionados
+function excluirSelecionados() {
+    if (selectedAlerts.length === 0) {
+        alert('Selecione pelo menos um alerta');
+        return;
+    }
+    
+    // Verificar se o usuário está autenticado
+    if (!getCookie('csrftoken')) {
+        alert('Sessão expirada. Faça login novamente.');
+        window.location.href = '/login/';
+        return;
+    }
+    
+    if (confirm(`Deseja realmente excluir ${selectedAlerts.length} alertas?`)) {
+        fetch('/alertas/excluir-multiplos/', {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                alertas: selectedAlerts
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao excluir alertas');
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao excluir alertas:', error);
+            if (error.message.includes('401') || error.message.includes('403')) {
+                alert('Sessão expirada. Faça login novamente.');
+                window.location.href = '/login/';
+            } else {
+                alert('Erro ao processar solicitação');
+            }
+        });
+    }
+}
+
+// Exportar alertas
+function exportarAlertas() {
+    const params = new URLSearchParams(window.location.search);
+    params.set('export', 'excel');
+    window.open(`/alertas/exportar/?${params.toString()}`, '_blank');
+}
+
+// Gerenciar seleção de checkboxes
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.bulk-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const alertaId = parseInt(this.value);
+            
+            if (this.checked) {
+                if (!selectedAlerts.includes(alertaId)) {
+                    selectedAlerts.push(alertaId);
+                }
+            } else {
+                selectedAlerts = selectedAlerts.filter(id => id !== alertaId);
+            }
+            
+            updateSelectedCount();
+        });
+    });
+});
+
+// Função para obter cookie CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

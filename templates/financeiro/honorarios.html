@@ -1,0 +1,374 @@
+{% extends 'base.html' %}
+{% load date_filters %}
+
+{% block title %}Honorários - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Gestão de Honorários{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'financeiro:dashboard' %}">Financeiro</a></li>
+<li class="breadcrumb-item active">Honorários</li>
+{% endblock %}
+
+{% block content %}
+<!-- Filtros e Busca -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Buscar</label>
+                <input type="text" name="q" class="form-control" value="{{ request.GET.q }}" 
+                       placeholder="Processo, Cliente, Observações">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="pendente" {% if request.GET.status == 'pendente' %}selected{% endif %}>Pendente</option>
+                    <option value="parcial" {% if request.GET.status == 'parcial' %}selected{% endif %}>Parcial</option>
+                    <option value="pago" {% if request.GET.status == 'pago' %}selected{% endif %}>Pago</option>
+                    <option value="cancelado" {% if request.GET.status == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                    <option value="em_cobranca" {% if request.GET.status == 'em_cobranca' %}selected{% endif %}>Em Cobrança</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Tipo</label>
+                <select name="tipo" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="fixo" {% if request.GET.tipo == 'fixo' %}selected{% endif %}>Valor Fixo</option>
+                    <option value="por_hora" {% if request.GET.tipo == 'por_hora' %}selected{% endif %}>Por Hora</option>
+                    <option value="por_exito" {% if request.GET.tipo == 'por_exito' %}selected{% endif %}>Por Êxito</option>
+                    <option value="misto" {% if request.GET.tipo == 'misto' %}selected{% endif %}>Misto</option>
+                    <option value="pro_bono" {% if request.GET.tipo == 'pro_bono' %}selected{% endif %}>Pro Bono</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Data Início</label>
+                <input type="date" name="data_inicio" class="form-control" value="{{ request.GET.data_inicio }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Data Fim</label>
+                <input type="date" name="data_fim" class="form-control" value="{{ request.GET.data_fim }}">
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <div class="btn-group w-100">
+                    <button type="submit" class="btn btn-outline-primary" title="Filtrar">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    <a href="{% url 'financeiro:honorarios' %}" class="btn btn-outline-secondary" title="Limpar">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="text-primary mb-1">{{ total_honorarios }}</h4>
+                        <p class="text-muted mb-0 small">Total</p>
+                    </div>
+                    <i class="bi bi-currency-dollar text-primary" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="text-success mb-1">R$ {{ valor_total|floatformat:2 }}</h4>
+                        <p class="text-muted mb-0 small">Valor Total</p>
+                    </div>
+                    <i class="bi bi-cash-stack text-success" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="text-warning mb-1">{{ honorarios_pendentes }}</h4>
+                        <p class="text-muted mb-0 small">Pendentes</p>
+                    </div>
+                    <i class="bi bi-clock text-warning" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="text-danger mb-1">{{ honorarios_vencidos }}</h4>
+                        <p class="text-muted mb-0 small">Vencidos</p>
+                    </div>
+                    <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Honorários -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i class="bi bi-currency-dollar me-2"></i>
+                Honorários ({{ honorarios.paginator.count }})
+            </h6>
+            <div class="btn-group">
+                <a href="{% url 'financeiro:criar_honorario' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>Novo Honorário
+                </a>
+                <div class="btn-group">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="exportarHonorarios()"><i class="bi bi-download me-2"></i>Exportar</a></li>
+                        <li><a class="dropdown-item" href="{% url 'financeiro:relatorios' %}"><i class="bi bi-file-earmark-text me-2"></i>Relatórios</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if honorarios %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Processo</th>
+                            <th>Cliente</th>
+                            <th>Tipo</th>
+                            <th>Valor</th>
+                            <th>Vencimento</th>
+                            <th>Status</th>
+                            <th>Parcelas</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for honorario in honorarios %}
+                        <tr class="{% if honorario.is_vencido %}table-danger{% elif honorario.data_vencimento <= today|add_days:7 %}table-warning{% endif %}">
+                            <td>
+                                <a href="{% url 'processos:detalhe' honorario.processo.pk %}" class="text-decoration-none">
+                                    <strong>{{ honorario.processo.numero_processo }}</strong>
+                                </a>
+                                <br><small class="text-muted">{{ honorario.processo.tipo_processo.nome }}</small>
+                            </td>
+                            <td>
+                                <div>
+                                    <strong>{{ honorario.cliente.nome_razao_social|truncatechars:25 }}</strong>
+                                    {% if honorario.cliente.nome_fantasia %}
+                                        <br><small class="text-muted">{{ honorario.cliente.nome_fantasia|truncatechars:20 }}</small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ honorario.get_tipo_cobranca_display }}</span>
+                                {% if honorario.tipo_cobranca == 'por_hora' and honorario.horas_trabalhadas %}
+                                    <br><small class="text-muted">{{ honorario.horas_trabalhadas }}h</small>
+                                {% elif honorario.tipo_cobranca == 'por_exito' and honorario.percentual_exito %}
+                                    <br><small class="text-muted">{{ honorario.percentual_exito }}%</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong class="text-primary">R$ {{ honorario.valor_total|floatformat:2 }}</strong>
+                                {% if honorario.valor_pago > 0 %}
+                                    <br><small class="text-success">Pago: R$ {{ honorario.valor_pago|floatformat:2 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="{% if honorario.is_vencido %}text-danger{% elif honorario.data_vencimento <= today|add_days:7 %}text-warning{% endif %}">
+                                    {{ honorario.data_vencimento|date:"d/m/Y" }}
+                                    {% if honorario.is_vencido %}
+                                        <i class="bi bi-exclamation-triangle ms-1"></i>
+                                    {% elif honorario.data_vencimento <= today|add_days:7 %}
+                                        <i class="bi bi-clock ms-1"></i>
+                                    {% endif %}
+                                </span>
+                                {% if honorario.data_pagamento %}
+                                    <br><small class="text-success">Pago: {{ honorario.data_pagamento|date:"d/m/Y" }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if honorario.status_pagamento == 'pago' %}success{% elif honorario.status_pagamento == 'parcial' %}info{% elif honorario.status_pagamento == 'cancelado' %}secondary{% elif honorario.status_pagamento == 'em_cobranca' %}danger{% else %}warning{% endif %}">
+                                    {{ honorario.get_status_pagamento_display }}
+                                </span>
+                                {% if honorario.percentual_pago > 0 and honorario.status_pagamento != 'pago' %}
+                                    <br><small class="text-muted">{{ honorario.percentual_pago|floatformat:0 }}% pago</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if honorario.numero_parcelas > 1 %}
+                                    <span class="badge bg-secondary">{{ honorario.numero_parcelas }}x</span>
+                                    <br><small class="text-muted">{{ honorario.parcelas_pagas_count }}/{{ honorario.numero_parcelas }} pagas</small>
+                                {% else %}
+                                    <span class="text-muted">À vista</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'financeiro:detalhe_honorario' honorario.pk %}" 
+                                       class="btn btn-outline-primary" title="Ver Detalhes">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'financeiro:editar_honorario' honorario.pk %}" 
+                                       class="btn btn-outline-secondary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <div class="btn-group">
+                                        <button class="btn btn-outline-success btn-sm dropdown-toggle" 
+                                                data-bs-toggle="dropdown" title="Ações">
+                                            <i class="bi bi-gear"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            {% if honorario.status_pagamento != 'pago' %}
+                                                <li><a class="dropdown-item" href="#" onclick="marcarComoPago('{{ honorario.pk }}')"><i class="bi bi-check-circle me-2"></i>Marcar como Pago</a></li>
+                                            {% endif %}
+                                            {% if honorario.numero_parcelas > 1 %}
+                                                <li><a class="dropdown-item" href="#" onclick="gerenciarParcelas('{{ honorario.pk }}')"><i class="bi bi-list-ol me-2"></i>Gerenciar Parcelas</a></li>
+                                            {% endif %}
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item" href="#" onclick="imprimirRecibo('{{ honorario.pk }}')"><i class="bi bi-printer me-2"></i>Imprimir Recibo</a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="enviarCobranca('{{ honorario.pk }}')"><i class="bi bi-envelope me-2"></i>Enviar Cobrança</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-currency-dollar text-muted" style="font-size: 4rem;"></i>
+                <h5 class="text-muted mt-3">Nenhum honorário encontrado</h5>
+                <p class="text-muted">Cadastre o primeiro honorário para começar.</p>
+                <a href="{% url 'financeiro:criar_honorario' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Cadastrar Honorário
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Paginação -->
+    {% if honorarios.has_other_pages %}
+    <div class="card-footer">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                {% if honorarios.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ honorarios.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.data_inicio %}&data_inicio={{ request.GET.data_inicio }}{% endif %}{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                {% for num in honorarios.paginator.page_range %}
+                    {% if honorarios.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > honorarios.number|add:'-3' and num < honorarios.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.data_inicio %}&data_inicio={{ request.GET.data_inicio }}{% endif %}{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if honorarios.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ honorarios.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.data_inicio %}&data_inicio={{ request.GET.data_inicio }}{% endif %}{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.table-responsive {
+    max-height: 600px;
+}
+
+.btn-group-sm > .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function marcarComoPago(honorarioId) {
+    if (confirm('Tem certeza que deseja marcar este honorário como pago?')) {
+        // Implementar AJAX para marcar como pago
+        alert('Funcionalidade em desenvolvimento.');
+    }
+}
+
+function gerenciarParcelas(honorarioId) {
+    window.location.href = `/financeiro/honorarios/${honorarioId}/#parcelas`;
+}
+
+function imprimirRecibo(honorarioId) {
+    window.open(`/financeiro/honorarios/${honorarioId}/recibo/`, '_blank');
+}
+
+function enviarCobranca(honorarioId) {
+    if (confirm('Deseja enviar cobrança por e-mail para o cliente?')) {
+        alert('Funcionalidade em desenvolvimento.');
+    }
+}
+
+function exportarHonorarios() {
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = `/financeiro/relatorios/exportar/?${params.toString()}`;
+}
+
+// Auto-submit do formulário de filtros com delay
+let filterTimeout;
+const filterInputs = document.querySelectorAll('input[name="q"], select[name="status"], select[name="tipo"]');
+
+filterInputs.forEach(input => {
+    input.addEventListener('input', function() {
+        clearTimeout(filterTimeout);
+        filterTimeout = setTimeout(() => {
+            if (input.name === 'q' && input.value.length > 0 && input.value.length < 3) {
+                return; // Não buscar com menos de 3 caracteres
+            }
+            input.form.submit();
+        }, 500);
+    });
+});
+</script>
+{% endblock %}

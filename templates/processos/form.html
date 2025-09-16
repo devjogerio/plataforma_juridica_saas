@@ -1,0 +1,350 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% if object %}
+    Editar Processo - {{ object.numero_processo }}
+{% else %}
+    Novo Processo
+{% endif %}
+ - Plataforma Jurídica
+{% endblock %}
+
+{% block page_title %}
+{% if object %}
+    Editar Processo
+{% else %}
+    Novo Processo
+{% endif %}
+{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'processos:lista' %}">Processos</a></li>
+{% if object %}
+    <li class="breadcrumb-item"><a href="{% url 'processos:detalhe' object.pk %}">{{ object.numero_processo }}</a></li>
+    <li class="breadcrumb-item active">Editar</li>
+{% else %}
+    <li class="breadcrumb-item active">Novo</li>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-folder-plus me-2"></i>
+                    {% if object %}
+                        Editar Processo: {{ object.numero_processo }}
+                    {% else %}
+                        Cadastrar Novo Processo
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Informações Básicas -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Informações Básicas
+                            </h6>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.numero_processo.id_for_label }}" class="form-label">
+                                Número do Processo <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control {% if form.numero_processo.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.numero_processo.id_for_label }}" 
+                                   name="{{ form.numero_processo.name }}" 
+                                   value="{{ form.numero_processo.value|default:'' }}"
+                                   placeholder="Ex: 1234567-89.2023.8.26.0001">
+                            {% if form.numero_processo.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.numero_processo.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.cliente.id_for_label }}" class="form-label">
+                                Cliente <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select {% if form.cliente.errors %}is-invalid{% endif %}" 
+                                    id="{{ form.cliente.id_for_label }}" 
+                                    name="{{ form.cliente.name }}">
+                                <option value="">Selecione um cliente</option>
+                                {% for cliente in form.cliente.field.queryset %}
+                                    <option value="{{ cliente.pk }}" 
+                                            {% if form.cliente.value == cliente.pk|stringformat:'s' %}selected{% endif %}>
+                                        {{ cliente.nome_razao_social }} ({{ cliente.cpf_cnpj }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.cliente.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.cliente.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <a href="{% url 'clientes:criar' %}" target="_blank" class="text-decoration-none">
+                                    <i class="bi bi-plus-circle me-1"></i>Cadastrar novo cliente
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.tipo_processo.id_for_label }}" class="form-label">
+                                Tipo de Processo <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control {% if form.tipo_processo.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.tipo_processo.id_for_label }}" 
+                                   name="{{ form.tipo_processo.name }}" 
+                                   value="{{ form.tipo_processo.value|default:'' }}"
+                                   placeholder="Ex: Judicial, Administrativo, Consultivo">
+                            {% if form.tipo_processo.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.tipo_processo.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.area_direito.id_for_label }}" class="form-label">
+                                Área do Direito <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control {% if form.area_direito.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.area_direito.id_for_label }}" 
+                                   name="{{ form.area_direito.name }}" 
+                                   value="{{ form.area_direito.value|default:'' }}"
+                                   placeholder="Ex: Civil, Trabalhista, Criminal">
+                            {% if form.area_direito.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.area_direito.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">
+                                Status <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select {% if form.status.errors %}is-invalid{% endif %}" 
+                                    id="{{ form.status.id_for_label }}" 
+                                    name="{{ form.status.name }}">
+                                <option value="ativo" {% if form.status.value == 'ativo' %}selected{% endif %}>Ativo</option>
+                                <option value="suspenso" {% if form.status.value == 'suspenso' %}selected{% endif %}>Suspenso</option>
+                                <option value="encerrado" {% if form.status.value == 'encerrado' %}selected{% endif %}>Encerrado</option>
+                            </select>
+                            {% if form.status.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.status.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.valor_causa.id_for_label }}" class="form-label">
+                                Valor da Causa
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" 
+                                       step="0.01"
+                                       class="form-control {% if form.valor_causa.errors %}is-invalid{% endif %}" 
+                                       id="{{ form.valor_causa.id_for_label }}" 
+                                       name="{{ form.valor_causa.name }}" 
+                                       value="{{ form.valor_causa.value|default:'' }}"
+                                       placeholder="0,00">
+                                {% if form.valor_causa.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.valor_causa.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Informações do Tribunal -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-building me-2"></i>
+                                Informações do Tribunal
+                            </h6>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.comarca_tribunal.id_for_label }}" class="form-label">
+                                Comarca/Tribunal
+                            </label>
+                            <input type="text" 
+                                   class="form-control {% if form.comarca_tribunal.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.comarca_tribunal.id_for_label }}" 
+                                   name="{{ form.comarca_tribunal.name }}" 
+                                   value="{{ form.comarca_tribunal.value|default:'' }}"
+                                   placeholder="Ex: Comarca de São Paulo">
+                            {% if form.comarca_tribunal.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.comarca_tribunal.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.vara_orgao.id_for_label }}" class="form-label">
+                                Vara/Órgão
+                            </label>
+                            <input type="text" 
+                                   class="form-control {% if form.vara_orgao.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.vara_orgao.id_for_label }}" 
+                                   name="{{ form.vara_orgao.name }}" 
+                                   value="{{ form.vara_orgao.value|default:'' }}"
+                                   placeholder="Ex: 1ª Vara Cível">
+                            {% if form.vara_orgao.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.vara_orgao.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Datas -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-calendar me-2"></i>
+                                Datas
+                            </h6>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.data_inicio.id_for_label }}" class="form-label">
+                                Data de Início <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" 
+                                   class="form-control {% if form.data_inicio.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.data_inicio.id_for_label }}" 
+                                   name="{{ form.data_inicio.name }}" 
+                                   value="{{ form.data_inicio.value|date:'Y-m-d'|default:'' }}">
+                            {% if form.data_inicio.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.data_inicio.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if object %}
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.data_encerramento.id_for_label }}" class="form-label">
+                                Data de Encerramento
+                            </label>
+                            <input type="date" 
+                                   class="form-control {% if form.data_encerramento.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.data_encerramento.id_for_label }}" 
+                                   name="{{ form.data_encerramento.name }}" 
+                                   value="{{ form.data_encerramento.value|date:'Y-m-d'|default:'' }}">
+                            {% if form.data_encerramento.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.data_encerramento.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Preencha apenas se o processo foi encerrado
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Observações -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-chat-text me-2"></i>
+                                Observações
+                            </h6>
+                        </div>
+                        
+                        <div class="col-12 mb-3">
+                            <label for="{{ form.observacoes.id_for_label }}" class="form-label">
+                                Observações Gerais
+                            </label>
+                            <textarea class="form-control {% if form.observacoes.errors %}is-invalid{% endif %}" 
+                                      id="{{ form.observacoes.id_for_label }}" 
+                                      name="{{ form.observacoes.name }}" 
+                                      rows="4"
+                                      placeholder="Informações adicionais sobre o processo...">{{ form.observacoes.value|default:'' }}</textarea>
+                            {% if form.observacoes.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.observacoes.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Botões -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% if object %}{% url 'processos:detalhe' object.pk %}{% else %}{% url 'processos:lista' %}{% endif %}" 
+                                   class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-2"></i>
+                                    {% if object %}
+                                        Atualizar Processo
+                                    {% else %}
+                                        Criar Processo
+                                    {% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Máscara para número do processo
+document.getElementById('id_numero_processo').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length >= 7) {
+        value = value.replace(/(\d{7})(\d{2})(\d{4})(\d{1})(\d{2})(\d{4})/, '$1-$2.$3.$4.$5.$6');
+    }
+    e.target.value = value;
+});
+
+// Validação do formulário
+document.querySelector('form').addEventListener('submit', function(e) {
+    const requiredFields = ['numero_processo', 'cliente', 'tipo_processo', 'area_direito', 'data_inicio'];
+    let hasErrors = false;
+    
+    requiredFields.forEach(function(fieldName) {
+        const field = document.querySelector(`[name="${fieldName}"]`);
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
+            hasErrors = true;
+        } else {
+            field.classList.remove('is-invalid');
+        }
+    });
+    
+    if (hasErrors) {
+        e.preventDefault();
+        alert('Por favor, preencha todos os campos obrigatórios.');
+    }
+});
+</script>
+{% endblock %}

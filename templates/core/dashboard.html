@@ -1,0 +1,315 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- KPIs Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total de Processos
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_processos }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-folder text-primary" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Processos Ativos
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ processos_ativos }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Processos Este Mês
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ processos_mes }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-calendar-plus text-info" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Total de Clientes
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_clientes }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-people text-warning" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos e Informações -->
+<div class="row">
+    <!-- Gráfico de Processos por Status -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Processos por Status</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-area">
+                    <canvas id="statusChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Prazos Críticos -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-danger">Prazos Críticos</h6>
+                <small class="text-muted">Próximos 7 dias</small>
+            </div>
+            <div class="card-body">
+                {% if prazos_criticos %}
+                    {% for prazo in prazos_criticos %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <div class="icon-circle bg-danger">
+                                <i class="bi bi-exclamation-triangle text-white"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="small text-gray-500">{{ prazo.data_limite|date:"d/m/Y" }}</div>
+                            <div class="font-weight-bold">{{ prazo.tipo_prazo }}</div>
+                            <div class="small">{{ prazo.processo.numero_processo }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-check-circle" style="font-size: 3rem;"></i>
+                        <p class="mt-2">Nenhum prazo crítico!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas Financeiras e Últimos Andamentos -->
+<div class="row">
+    <!-- Estatísticas Financeiras -->
+    <div class="col-xl-6 col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Resumo Financeiro</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h4 font-weight-bold text-success">R$ {{ total_honorarios|floatformat:2 }}</div>
+                            <div class="small text-muted">Total Honorários</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h4 font-weight-bold text-danger">R$ {{ total_despesas|floatformat:2 }}</div>
+                            <div class="small text-muted">Total Despesas</div>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="text-center">
+                    <div class="h4 font-weight-bold text-primary">
+                        R$ {{ total_honorarios|add:total_despesas|floatformat:2 }}
+                    </div>
+                    <div class="small text-muted">Saldo Líquido</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Últimos Andamentos -->
+    <div class="col-xl-6 col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Últimos Andamentos</h6>
+            </div>
+            <div class="card-body">
+                {% if ultimos_andamentos %}
+                    {% for andamento in ultimos_andamentos %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <div class="icon-circle bg-info">
+                                <i class="bi bi-file-text text-white"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="small text-gray-500">{{ andamento.data_andamento|date:"d/m/Y" }}</div>
+                            <div class="font-weight-bold">{{ andamento.tipo_andamento }}</div>
+                            <div class="small">{{ andamento.processo.numero_processo }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-file-text" style="font-size: 3rem;"></i>
+                        <p class="mt-2">Nenhum andamento recente</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Processos por Área do Direito -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Processos por Área do Direito</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-bar">
+                    <canvas id="areaChart" width="400" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.border-left-primary {
+    border-left: 0.25rem solid var(--primary-color) !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid var(--success-color) !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+.border-left-warning {
+    border-left: 0.25rem solid var(--warning-color) !important;
+}
+
+.icon-circle {
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.text-xs {
+    font-size: 0.7rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Gráfico de Processos por Status
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+const statusData = {{ processos_por_status|safe }};
+
+const statusChart = new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: statusData.map(item => item.status.charAt(0).toUpperCase() + item.status.slice(1)),
+        datasets: [{
+            data: statusData.map(item => item.count),
+            backgroundColor: [
+                'var(--success-color)',
+                'var(--warning-color)',
+                'var(--danger-color)',
+                'var(--primary-color)',
+                '#6c757d'
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Gráfico de Processos por Área
+const areaCtx = document.getElementById('areaChart').getContext('2d');
+const areaData = {{ processos_por_area|safe }};
+
+const areaChart = new Chart(areaCtx, {
+    type: 'bar',
+    data: {
+        labels: areaData.map(item => item.area_direito),
+        datasets: [{
+            label: 'Processos',
+            data: areaData.map(item => item.count),
+            backgroundColor: 'var(--primary-color)',
+            borderColor: 'var(--primary-color)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,605 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard de Prazos - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Dashboard de Prazos{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item active">Prazos</li>
+{% endblock %}
+
+{% block content %}
+<!-- Cards de Resumo -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="text-danger mb-1">{{ prazos_vencidos.count }}</h3>
+                        <p class="text-muted mb-0 small">Vencidos</p>
+                    </div>
+                    <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="text-warning mb-1">{{ prazos_criticos.count }}</h3>
+                        <p class="text-muted mb-0 small">Críticos (≤3 dias)</p>
+                    </div>
+                    <i class="bi bi-clock text-warning" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="text-info mb-1">{{ prazos_proximos.count }}</h3>
+                        <p class="text-muted mb-0 small">Próximos (≤7 dias)</p>
+                    </div>
+                    <i class="bi bi-calendar-event text-info" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="text-success mb-1">{{ prazos_pendentes.count }}</h3>
+                        <p class="text-muted mb-0 small">Total Pendentes</p>
+                    </div>
+                    <i class="bi bi-list-check text-success" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prazos Vencidos -->
+{% if prazos_vencidos %}
+<div class="card mb-4 border-danger">
+    <div class="card-header bg-danger text-white">
+        <h6 class="mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Prazos Vencidos ({{ prazos_vencidos.count }})
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Processo</th>
+                        <th>Cliente</th>
+                        <th>Tipo</th>
+                        <th>Data Limite</th>
+                        <th>Dias Vencido</th>
+                        <th>Responsável</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prazo in prazos_vencidos %}
+                    <tr class="table-danger">
+                        <td>
+                            <a href="{% url 'processos:detalhe' prazo.processo.pk %}" class="text-decoration-none">
+                                <strong>{{ prazo.processo.numero_processo }}</strong>
+                            </a>
+                        </td>
+                        <td>{{ prazo.processo.cliente.nome_razao_social|truncatechars:30 }}</td>
+                        <td>{{ prazo.tipo_prazo }}</td>
+                        <td>{{ prazo.data_limite|date:"d/m/Y" }}</td>
+                        <td>
+                            <span class="badge bg-danger">
+                                {{ prazo.dias_vencido }} dias
+                            </span>
+                        </td>
+                        <td>{{ prazo.responsavel.get_full_name|default:prazo.responsavel.username }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'processos:cumprir_prazo' prazo.processo.pk prazo.pk %}" 
+                                   class="btn btn-outline-success" 
+                                   title="Marcar como Cumprido"
+                                   onclick="return confirm('Confirma que este prazo foi cumprido?')">
+                                    <i class="bi bi-check-circle"></i>
+                                </a>
+                                <a href="{% url 'processos:prazos' prazo.processo.pk %}" 
+                                   class="btn btn-outline-primary" 
+                                   title="Ver Todos os Prazos">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Prazos Críticos -->
+{% if prazos_criticos %}
+<div class="card mb-4 border-warning">
+    <div class="card-header bg-warning text-dark">
+        <h6 class="mb-0">
+            <i class="bi bi-clock me-2"></i>
+            Prazos Críticos - Próximos 3 Dias ({{ prazos_criticos.count }})
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Processo</th>
+                        <th>Cliente</th>
+                        <th>Tipo</th>
+                        <th>Data Limite</th>
+                        <th>Dias Restantes</th>
+                        <th>Responsável</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prazo in prazos_criticos %}
+                    <tr class="table-warning">
+                        <td>
+                            <a href="{% url 'processos:detalhe' prazo.processo.pk %}" class="text-decoration-none">
+                                <strong>{{ prazo.processo.numero_processo }}</strong>
+                            </a>
+                        </td>
+                        <td>{{ prazo.processo.cliente.nome_razao_social|truncatechars:30 }}</td>
+                        <td>{{ prazo.tipo_prazo }}</td>
+                        <td>{{ prazo.data_limite|date:"d/m/Y" }}</td>
+                        <td>
+                            <span class="badge bg-warning text-dark">
+                                {{ prazo.dias_restantes|floatformat:0 }} dias
+                            </span>
+                        </td>
+                        <td>{{ prazo.responsavel.get_full_name|default:prazo.responsavel.username }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'processos:cumprir_prazo' prazo.processo.pk prazo.pk %}" 
+                                   class="btn btn-outline-success" 
+                                   title="Marcar como Cumprido"
+                                   onclick="return confirm('Confirma que este prazo foi cumprido?')">
+                                    <i class="bi bi-check-circle"></i>
+                                </a>
+                                <a href="{% url 'processos:prazos' prazo.processo.pk %}" 
+                                   class="btn btn-outline-primary" 
+                                   title="Ver Todos os Prazos">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Calendário de Prazos -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-calendar3 me-2"></i>
+                    Calendário de Prazos - {{ mes_atual|date:"F Y" }}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="calendario-prazos"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Próximos Prazos -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-calendar-event me-2"></i>
+                    Próximos 7 Dias
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if prazos_proximos %}
+                    <div class="timeline">
+                        {% for prazo in prazos_proximos|slice:":10" %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-{% if prazo.dias_restantes <= 1 %}danger{% elif prazo.dias_restantes <= 3 %}warning{% else %}info{% endif %}"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">{{ prazo.tipo_prazo }}</h6>
+                                <p class="text-muted small mb-1">
+                                    <strong>{{ prazo.processo.numero_processo }}</strong><br>
+                                    {{ prazo.processo.cliente.nome_razao_social|truncatechars:25 }}
+                                </p>
+                                <p class="small mb-0">
+                                    <i class="bi bi-calendar me-1"></i>{{ prazo.data_limite|date:"d/m/Y" }}
+                                    <span class="badge bg-{% if prazo.dias_restantes <= 1 %}danger{% elif prazo.dias_restantes <= 3 %}warning{% else %}info{% endif %} ms-2">
+                                        {{ prazo.dias_restantes|floatformat:0 }} dias
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-calendar-check text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2 mb-0">Nenhum prazo nos próximos 7 dias</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Estatísticas por Responsável -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-person-check me-2"></i>
+                    Por Responsável
+                </h6>
+            </div>
+            <div class="card-body">
+                {% for stat in stats_responsavel %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <strong>{{ stat.responsavel__first_name|default:stat.responsavel__username }}</strong>
+                    </div>
+                    <div>
+                        <span class="badge bg-secondary">{{ stat.total }}</span>
+                        {% if stat.criticos > 0 %}
+                            <span class="badge bg-warning text-dark ms-1">{{ stat.criticos }} críticos</span>
+                        {% endif %}
+                        {% if stat.vencidos > 0 %}
+                            <span class="badge bg-danger ms-1">{{ stat.vencidos }} vencidos</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted mb-0">Nenhum prazo pendente</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    border-left: 3px solid #dee2e6;
+}
+
+.card.border-danger .card-header {
+    border-bottom: 1px solid #dc3545;
+}
+
+.card.border-warning .card-header {
+    border-bottom: 1px solid #ffc107;
+}
+
+.btn-group-sm > .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+#calendario-prazos {
+    min-height: 400px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Dados dos prazos para o calendário
+const prazosCalendario = [
+    {% for prazo in todos_prazos_mes %}
+    {
+        title: '{{ prazo.tipo_prazo|escapejs }}',
+        date: '{{ prazo.data_limite|date:"Y-m-d" }}',
+        processo: '{{ prazo.processo.numero_processo|escapejs }}',
+        cliente: '{{ prazo.processo.cliente.nome_razao_social|truncatechars:30|escapejs }}',
+        responsavel: '{{ prazo.responsavel.get_full_name|default:prazo.responsavel.username|escapejs }}',
+        status: '{{ prazo.status }}',
+        dias_restantes: {{ prazo.dias_restantes|default:0 }},
+        url: '{% url "processos:prazos" prazo.processo.pk %}'
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+// Renderizar calendário simples
+function renderCalendario() {
+    const container = document.getElementById('calendario-prazos');
+    const hoje = new Date();
+    const mesAtual = hoje.getMonth();
+    const anoAtual = hoje.getFullYear();
+    
+    // Criar estrutura do calendário
+    let html = '<div class="calendar-grid">';
+    
+    // Cabeçalho dos dias da semana
+    const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    html += '<div class="calendar-header">';
+    diasSemana.forEach(dia => {
+        html += `<div class="calendar-day-header">${dia}</div>`;
+    });
+    html += '</div>';
+    
+    // Dias do mês
+    const primeiroDia = new Date(anoAtual, mesAtual, 1).getDay();
+    const ultimoDia = new Date(anoAtual, mesAtual + 1, 0).getDate();
+    
+    html += '<div class="calendar-body">';
+    
+    // Espaços vazios antes do primeiro dia
+    for (let i = 0; i < primeiroDia; i++) {
+        html += '<div class="calendar-day empty"></div>';
+    }
+    
+    // Dias do mês
+    for (let dia = 1; dia <= ultimoDia; dia++) {
+        const dataAtual = new Date(anoAtual, mesAtual, dia);
+        const dataStr = dataAtual.toISOString().split('T')[0];
+        
+        // Verificar se há prazos neste dia
+        const prazosNoDia = prazosCalendario.filter(p => p.date === dataStr);
+        
+        let classeDia = 'calendar-day';
+        if (dataAtual.toDateString() === hoje.toDateString()) {
+            classeDia += ' today';
+        }
+        
+        html += `<div class="${classeDia}" data-date="${dataStr}">`;
+        html += `<div class="day-number">${dia}</div>`;
+        
+        if (prazosNoDia.length > 0) {
+            html += '<div class="day-events">';
+            prazosNoDia.forEach(prazo => {
+                let cor = 'secondary';
+                if (prazo.dias_restantes < 0) cor = 'danger';
+                else if (prazo.dias_restantes <= 3) cor = 'warning';
+                else if (prazo.dias_restantes <= 7) cor = 'info';
+                
+                html += `<div class="event bg-${cor}" title="${prazo.title} - ${prazo.processo}">`;
+                html += `<small>${prazo.title}</small>`;
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+        
+        html += '</div>';
+    }
+    
+    html += '</div></div>';
+    
+    container.innerHTML = html;
+    
+    // Adicionar eventos de clique
+    container.querySelectorAll('.calendar-day[data-date]').forEach(dia => {
+        dia.addEventListener('click', function() {
+            const data = this.dataset.date;
+            const prazosNoDia = prazosCalendario.filter(p => p.date === data);
+            
+            if (prazosNoDia.length > 0) {
+                mostrarPrazosModal(data, prazosNoDia);
+            }
+        });
+    });
+}
+
+// Modal para mostrar prazos do dia
+function mostrarPrazosModal(data, prazos) {
+    const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
+    
+    let html = `
+        <div class="modal fade" id="prazosModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Prazos - ${dataFormatada}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+    `;
+    
+    prazos.forEach(prazo => {
+        let cor = 'secondary';
+        if (prazo.dias_restantes < 0) cor = 'danger';
+        else if (prazo.dias_restantes <= 3) cor = 'warning';
+        else if (prazo.dias_restantes <= 7) cor = 'info';
+        
+        html += `
+            <div class="card mb-2">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">${prazo.title}</h6>
+                            <small class="text-muted">
+                                <strong>${prazo.processo}</strong> - ${prazo.cliente}<br>
+                                Responsável: ${prazo.responsavel}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-${cor}">
+                                ${prazo.dias_restantes < 0 ? 'Vencido' : prazo.dias_restantes + ' dias'}
+                            </span>
+                            <br>
+                            <a href="${prazo.url}" class="btn btn-sm btn-outline-primary mt-1">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remover modal anterior se existir
+    const modalAnterior = document.getElementById('prazosModal');
+    if (modalAnterior) {
+        modalAnterior.remove();
+    }
+    
+    // Adicionar novo modal
+    document.body.insertAdjacentHTML('beforeend', html);
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('prazosModal'));
+    modal.show();
+}
+
+// Inicializar calendário
+document.addEventListener('DOMContentLoaded', function() {
+    renderCalendario();
+    
+    // Atualizar a cada 5 minutos
+    setInterval(function() {
+        location.reload();
+    }, 300000);
+});
+</script>
+
+<style>
+.calendar-grid {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.calendar-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: #f8f9fa;
+}
+
+.calendar-day-header {
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    border-right: 1px solid #dee2e6;
+}
+
+.calendar-day-header:last-child {
+    border-right: none;
+}
+
+.calendar-body {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-day {
+    min-height: 80px;
+    padding: 5px;
+    border-right: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.calendar-day:hover {
+    background-color: #f8f9fa;
+}
+
+.calendar-day.today {
+    background-color: #e3f2fd;
+}
+
+.calendar-day.empty {
+    background-color: #f8f9fa;
+    cursor: default;
+}
+
+.calendar-day:nth-child(7n) {
+    border-right: none;
+}
+
+.day-number {
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.day-events {
+    font-size: 0.7rem;
+}
+
+.event {
+    padding: 1px 3px;
+    margin: 1px 0;
+    border-radius: 2px;
+    color: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.event.bg-warning {
+    color: black !important;
+}
+</style>
+{% endblock %}

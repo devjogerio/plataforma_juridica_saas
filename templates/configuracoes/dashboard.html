@@ -1,0 +1,385 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Configurações - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.config-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.config-card {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    border: none;
+    height: 100%;
+}
+
+.config-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.config-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 1rem;
+    color: white;
+}
+
+.config-icon.tipos-processo {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+}
+
+.config-icon.areas-direito {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+}
+
+.config-icon.status-processo {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+}
+
+.config-icon.modelos {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+}
+
+.config-icon.sistema {
+    background: linear-gradient(135deg, #6f42c1, #5a32a3);
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #495057;
+}
+
+.recent-item {
+    padding: 1rem;
+    border-left: 4px solid #e9ecef;
+    margin-bottom: 1rem;
+    background: #f8f9fa;
+    border-radius: 0 8px 8px 0;
+    transition: all 0.2s;
+}
+
+.recent-item:hover {
+    border-left-color: #007bff;
+    background: #e7f3ff;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: ">";
+}
+
+.quick-actions {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    padding: 2rem;
+}
+
+.btn-quick-action {
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.btn-quick-action:hover {
+    border-color: #007bff;
+    transform: translateX(5px);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Configurações</li>
+    </ol>
+</nav>
+
+<!-- Header -->
+<div class="config-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="mb-2">
+                    <i class="fas fa-cogs me-2"></i>Configurações do Sistema
+                </h1>
+                <p class="mb-0">Gerencie tipos de processo, áreas do direito, modelos e configurações gerais</p>
+            </div>
+            <div class="col-auto">
+                <div class="d-flex gap-2">
+                    <span class="badge bg-light text-dark fs-6">
+                        <i class="fas fa-database me-1"></i>{{ total_configuracoes }} configurações
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <!-- Módulos de Configuração -->
+        <div class="col-lg-8">
+            <div class="row">
+                <!-- Tipos de Processo -->
+                <div class="col-md-6 mb-4">
+                    <div class="config-card">
+                        <div class="text-center">
+                            <div class="config-icon tipos-processo">
+                                <i class="fas fa-folder-open"></i>
+                            </div>
+                            <h4>Tipos de Processo</h4>
+                            <div class="stat-number">{{ total_tipos_processo }}</div>
+                            <p class="text-muted mb-3">Configure os tipos de processo disponíveis</p>
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'configuracoes:tipos_processo' %}" class="btn btn-primary">
+                                    <i class="fas fa-list me-1"></i>Gerenciar
+                                </a>
+                                <a href="{% url 'configuracoes:criar_tipo_processo' %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-plus me-1"></i>Novo Tipo
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Áreas do Direito -->
+                <div class="col-md-6 mb-4">
+                    <div class="config-card">
+                        <div class="text-center">
+                            <div class="config-icon areas-direito">
+                                <i class="fas fa-balance-scale"></i>
+                            </div>
+                            <h4>Áreas do Direito</h4>
+                            <div class="stat-number">{{ total_areas_direito }}</div>
+                            <p class="text-muted mb-3">Configure as áreas do direito</p>
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'configuracoes:areas_direito' %}" class="btn btn-success">
+                                    <i class="fas fa-list me-1"></i>Gerenciar
+                                </a>
+                                <a href="{% url 'configuracoes:criar_area_direito' %}" class="btn btn-outline-success btn-sm">
+                                    <i class="fas fa-plus me-1"></i>Nova Área
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status de Processo -->
+                <div class="col-md-6 mb-4">
+                    <div class="config-card">
+                        <div class="text-center">
+                            <div class="config-icon status-processo">
+                                <i class="fas fa-tags"></i>
+                            </div>
+                            <h4>Status de Processo</h4>
+                            <div class="stat-number">{{ total_status_processo }}</div>
+                            <p class="text-muted mb-3">Configure os status personalizados</p>
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'configuracoes:status_processo' %}" class="btn btn-warning">
+                                    <i class="fas fa-list me-1"></i>Gerenciar
+                                </a>
+                                <a href="{% url 'configuracoes:criar_status_processo' %}" class="btn btn-outline-warning btn-sm">
+                                    <i class="fas fa-plus me-1"></i>Novo Status
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modelos de Documento -->
+                <div class="col-md-6 mb-4">
+                    <div class="config-card">
+                        <div class="text-center">
+                            <div class="config-icon modelos">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <h4>Modelos de Documento</h4>
+                            <div class="stat-number">{{ total_modelos_documento }}</div>
+                            <p class="text-muted mb-3">Gerencie modelos de documentos</p>
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'configuracoes:modelos_documentos' %}" class="btn btn-info">
+                                    <i class="fas fa-list me-1"></i>Gerenciar
+                                </a>
+                                <a href="{% url 'configuracoes:criar_modelo_documento' %}" class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-plus me-1"></i>Novo Modelo
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configurações do Sistema -->
+                <div class="col-12 mb-4">
+                    <div class="config-card">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 text-center">
+                                <div class="config-icon sistema">
+                                    <i class="fas fa-server"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <h4>Configurações do Sistema</h4>
+                                <p class="text-muted mb-0">Configure parâmetros gerais do sistema, notificações e preferências</p>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-grid">
+                                    {% if user.is_staff %}
+                                    <a href="{% url 'configuracoes:sistema' %}" class="btn btn-secondary">
+                                        <i class="fas fa-cog me-1"></i>Configurar
+                                    </a>
+                                    {% else %}
+                                    <button class="btn btn-secondary" disabled>
+                                        <i class="fas fa-lock me-1"></i>Restrito
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Ações Rápidas -->
+            <div class="quick-actions mb-4">
+                <h5 class="mb-3">
+                    <i class="fas fa-bolt me-2"></i>Ações Rápidas
+                </h5>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'configuracoes:criar_tipo_processo' %}" class="btn btn-outline-primary btn-quick-action">
+                        <i class="fas fa-plus me-2"></i>Novo Tipo de Processo
+                    </a>
+                    <a href="{% url 'configuracoes:criar_area_direito' %}" class="btn btn-outline-success btn-quick-action">
+                        <i class="fas fa-plus me-2"></i>Nova Área do Direito
+                    </a>
+                    <a href="{% url 'configuracoes:criar_modelo_documento' %}" class="btn btn-outline-info btn-quick-action">
+                        <i class="fas fa-plus me-2"></i>Novo Modelo de Documento
+                    </a>
+                    {% if user.is_staff %}
+                    <a href="{% url 'configuracoes:sistema' %}" class="btn btn-outline-secondary btn-quick-action">
+                        <i class="fas fa-cog me-2"></i>Configurações Avançadas
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Itens Recentes -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>Adicionados Recentemente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if tipos_processo_recentes %}
+                        <h6 class="text-muted">Tipos de Processo</h6>
+                        {% for tipo in tipos_processo_recentes %}
+                        <div class="recent-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ tipo.nome }}</h6>
+                                    <small class="text-muted">{{ tipo.criado_em|date:"d/m/Y" }}</small>
+                                </div>
+                                <span class="badge" style="background-color: {{ tipo.cor }};">{{ tipo.codigo }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    {% if areas_direito_recentes %}
+                        <h6 class="text-muted mt-3">Áreas do Direito</h6>
+                        {% for area in areas_direito_recentes %}
+                        <div class="recent-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ area.nome }}</h6>
+                                    <small class="text-muted">{{ area.criado_em|date:"d/m/Y" }}</small>
+                                </div>
+                                <span class="badge" style="background-color: {{ area.cor }};">{{ area.codigo }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    {% if not tipos_processo_recentes and not areas_direito_recentes %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-3x mb-3 opacity-50"></i>
+                            <p>Nenhum item recente encontrado.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Modelos Mais Usados -->
+            {% if modelos_mais_usados %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-star me-2"></i>Modelos Mais Usados
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for modelo in modelos_mais_usados %}
+                    <div class="recent-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ modelo.nome }}</h6>
+                                <small class="text-muted">{{ modelo.categoria }}</small>
+                            </div>
+                            <span class="badge bg-primary">{{ modelo.vezes_usado }}x</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animação dos cards ao carregar
+    const cards = document.querySelectorAll('.config-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+    
+    // Tooltip para botões desabilitados
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

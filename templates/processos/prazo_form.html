@@ -1,0 +1,311 @@
+{% extends 'base.html' %}
+
+{% block title %}Novo Prazo - {{ processo.numero_processo }} - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Novo Prazo{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'processos:lista' %}">Processos</a></li>
+<li class="breadcrumb-item"><a href="{% url 'processos:detalhe' processo.pk %}">{{ processo.numero_processo }}</a></li>
+<li class="breadcrumb-item"><a href="{% url 'processos:prazos' processo.pk %}">Prazos</a></li>
+<li class="breadcrumb-item active">Novo</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Informações do Processo -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6 class="text-primary mb-2">Processo: {{ processo.numero_processo }}</h6>
+                <p class="text-muted mb-0">
+                    <strong>Cliente:</strong> {{ processo.cliente.nome_razao_social }} | 
+                    <strong>Área:</strong> {{ processo.area_direito }}
+                </p>
+            </div>
+        </div>
+        
+        <!-- Formulário -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock me-2"></i>
+                    Adicionar Novo Prazo
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.tipo_prazo.id_for_label }}" class="form-label">
+                                Tipo de Prazo <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select {% if form.tipo_prazo.errors %}is-invalid{% endif %}" 
+                                    id="{{ form.tipo_prazo.id_for_label }}" 
+                                    name="{{ form.tipo_prazo.name }}">
+                                <option value="">Selecione o tipo</option>
+                                <option value="contestacao" {% if form.tipo_prazo.value == 'contestacao' %}selected{% endif %}>Contestação</option>
+                                <option value="recurso" {% if form.tipo_prazo.value == 'recurso' %}selected{% endif %}>Recurso</option>
+                                <option value="manifestacao" {% if form.tipo_prazo.value == 'manifestacao' %}selected{% endif %}>Manifestação</option>
+                                <option value="peticao" {% if form.tipo_prazo.value == 'peticao' %}selected{% endif %}>Petição</option>
+                                <option value="audiencia" {% if form.tipo_prazo.value == 'audiencia' %}selected{% endif %}>Audiência</option>
+                                <option value="cumprimento" {% if form.tipo_prazo.value == 'cumprimento' %}selected{% endif %}>Cumprimento</option>
+                                <option value="outros" {% if form.tipo_prazo.value == 'outros' %}selected{% endif %}>Outros</option>
+                            </select>
+                            {% if form.tipo_prazo.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.tipo_prazo.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.data_limite.id_for_label }}" class="form-label">
+                                Data Limite <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" 
+                                   class="form-control {% if form.data_limite.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.data_limite.id_for_label }}" 
+                                   name="{{ form.data_limite.name }}" 
+                                   value="{{ form.data_limite.value|date:'Y-m-d'|default:'' }}">
+                            {% if form.data_limite.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.data_limite.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                <span id="dias-restantes"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.descricao.id_for_label }}" class="form-label">
+                            Descrição <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control {% if form.descricao.errors %}is-invalid{% endif %}" 
+                                  id="{{ form.descricao.id_for_label }}" 
+                                  name="{{ form.descricao.name }}" 
+                                  rows="4"
+                                  placeholder="Descreva o prazo e as ações necessárias...">{{ form.descricao.value|default:'' }}</textarea>
+                        {% if form.descricao.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.descricao.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.responsavel.id_for_label }}" class="form-label">
+                                Responsável <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select {% if form.responsavel.errors %}is-invalid{% endif %}" 
+                                    id="{{ form.responsavel.id_for_label }}" 
+                                    name="{{ form.responsavel.name }}">
+                                <option value="">Selecione o responsável</option>
+                                {% for user in usuarios %}
+                                    <option value="{{ user.pk }}" {% if form.responsavel.value == user.pk %}selected{% endif %}>
+                                        {{ user.get_full_name|default:user.username }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.responsavel.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.responsavel.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Prioridade</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="prioridade" id="prioridade-baixa" value="baixa" {% if form.prioridade.value == 'baixa' or not form.prioridade.value %}checked{% endif %}>
+                                <label class="btn btn-outline-success" for="prioridade-baixa">
+                                    <i class="bi bi-arrow-down me-1"></i>Baixa
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="prioridade" id="prioridade-media" value="media" {% if form.prioridade.value == 'media' %}checked{% endif %}>
+                                <label class="btn btn-outline-warning" for="prioridade-media">
+                                    <i class="bi bi-dash me-1"></i>Média
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="prioridade" id="prioridade-alta" value="alta" {% if form.prioridade.value == 'alta' %}checked{% endif %}>
+                                <label class="btn btn-outline-danger" for="prioridade-alta">
+                                    <i class="bi bi-arrow-up me-1"></i>Alta
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Alertas -->
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-bell me-2"></i>Configurações de Alerta
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="alerta_email" id="alerta-email" {% if form.alerta_email.value %}checked{% endif %}>
+                                        <label class="form-check-label" for="alerta-email">
+                                            Enviar alerta por e-mail
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="dias-antecedencia" class="form-label">Dias de antecedência</label>
+                                    <select class="form-select" name="dias_antecedencia" id="dias-antecedencia">
+                                        <option value="1" {% if form.dias_antecedencia.value == 1 %}selected{% endif %}>1 dia</option>
+                                        <option value="3" {% if form.dias_antecedencia.value == 3 or not form.dias_antecedencia.value %}selected{% endif %}>3 dias</option>
+                                        <option value="5" {% if form.dias_antecedencia.value == 5 %}selected{% endif %}>5 dias</option>
+                                        <option value="7" {% if form.dias_antecedencia.value == 7 %}selected{% endif %}>7 dias</option>
+                                        <option value="15" {% if form.dias_antecedencia.value == 15 %}selected{% endif %}>15 dias</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'processos:prazos' processo.pk %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>Salvar Prazo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Calcular dias restantes
+function calcularDiasRestantes() {
+    const dataLimite = document.getElementById('id_data_limite').value;
+    const spanDias = document.getElementById('dias-restantes');
+    
+    if (dataLimite) {
+        const hoje = new Date();
+        const limite = new Date(dataLimite);
+        const diffTime = limite - hoje;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < 0) {
+            spanDias.innerHTML = `<span class="text-danger">Prazo vencido há ${Math.abs(diffDays)} dias</span>`;
+        } else if (diffDays === 0) {
+            spanDias.innerHTML = '<span class="text-warning">Prazo vence hoje!</span>';
+        } else if (diffDays <= 3) {
+            spanDias.innerHTML = `<span class="text-warning">Faltam ${diffDays} dias (prazo crítico)</span>`;
+        } else {
+            spanDias.innerHTML = `<span class="text-success">Faltam ${diffDays} dias</span>`;
+        }
+    } else {
+        spanDias.innerHTML = '';
+    }
+}
+
+// Eventos
+document.addEventListener('DOMContentLoaded', function() {
+    // Definir responsável padrão como usuário atual
+    const responsavelField = document.getElementById('id_responsavel');
+    if (!responsavelField.value && responsavelField.options.length > 1) {
+        responsavelField.selectedIndex = 1; // Primeiro usuário da lista
+    }
+    
+    // Calcular dias restantes na inicialização
+    calcularDiasRestantes();
+});
+
+// Recalcular quando a data mudar
+document.getElementById('id_data_limite').addEventListener('change', calcularDiasRestantes);
+
+// Validação do formulário
+document.querySelector('form').addEventListener('submit', function(e) {
+    const requiredFields = ['tipo_prazo', 'data_limite', 'descricao', 'responsavel'];
+    let hasErrors = false;
+    
+    requiredFields.forEach(function(fieldName) {
+        const field = document.querySelector(`[name="${fieldName}"]`);
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
+            hasErrors = true;
+        } else {
+            field.classList.remove('is-invalid');
+        }
+    });
+    
+    // Validar se a data não é no passado
+    const dataLimite = document.getElementById('id_data_limite').value;
+    if (dataLimite) {
+        const hoje = new Date();
+        const limite = new Date(dataLimite);
+        if (limite < hoje) {
+            if (!confirm('A data limite está no passado. Deseja continuar mesmo assim?')) {
+                e.preventDefault();
+                return;
+            }
+        }
+    }
+    
+    if (hasErrors) {
+        e.preventDefault();
+        alert('Por favor, preencha todos os campos obrigatórios.');
+    }
+});
+
+// Sugestões de descrição baseadas no tipo
+document.getElementById('id_tipo_prazo').addEventListener('change', function() {
+    const tipo = this.value;
+    const descricaoField = document.getElementById('id_descricao');
+    
+    if (!descricaoField.value) {
+        const sugestoes = {
+            'contestacao': 'Apresentar contestação ao processo',
+            'recurso': 'Interpor recurso contra a decisão',
+            'manifestacao': 'Apresentar manifestação sobre',
+            'peticao': 'Protocolar petição',
+            'audiencia': 'Comparecer à audiência',
+            'cumprimento': 'Cumprir determinação judicial'
+        };
+        
+        if (sugestoes[tipo]) {
+            descricaoField.value = sugestoes[tipo];
+        }
+    }
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.btn-check:checked + .btn-outline-success {
+    background-color: #198754;
+    border-color: #198754;
+    color: white;
+}
+
+.btn-check:checked + .btn-outline-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: black;
+}
+
+.btn-check:checked + .btn-outline-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.card.bg-light {
+    border: 1px solid #dee2e6;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,39 @@
+# Dependências adicionais para desenvolvimento e implementação das melhorias
+
+# Performance e Cache
+django-redis>=5.4.0  # Já incluído no requirements.txt
+redis>=5.0.0  # Já incluído no requirements.txt
+
+# Testing avançado
+pytest-xdist>=3.3.0  # Para testes paralelos
+pytest-mock>=3.11.0  # Para mocking avançado
+pytest-benchmark>=4.0.0  # Para benchmarks de performance
+coverage>=7.3.0  # Para análise de cobertura detalhada
+
+# Performance monitoring
+django-silk>=5.0.0  # Profiling de performance
+django-debug-toolbar>=4.2.0  # Já incluído no requirements.txt
+memory-profiler>=0.61.0  # Para análise de memória
+
+# Code quality avançado
+radon>=6.0.0  # Para análise de complexidade ciclomática
+bandit>=1.7.0  # Para análise de segurança
+safety>=2.3.0  # Para verificação de vulnerabilidades
+
+# Rate limiting
+django-ratelimit>=4.1.0  # Para implementar rate limiting
+
+# Logging estruturado
+structlog>=23.1.0  # Para logging estruturado
+python-json-logger>=2.0.0  # Para logs em JSON
+
+# Load testing
+locust>=2.17.0  # Para testes de carga
+
+# Database optimization
+django-querycount>=0.8.0  # Para contar queries
+nplusone>=1.0.0  # Para detectar N+1 queries
+
+# Monitoring
+prometheus-client>=0.17.0  # Para métricas Prometheus
+django-prometheus>=2.3.0  # Integração Django com Prometheus

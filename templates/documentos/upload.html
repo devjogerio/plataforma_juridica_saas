@@ -1,0 +1,607 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload de Documentos - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Upload de Documentos{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'documentos:lista' %}">Documentos</a></li>
+<li class="breadcrumb-item active">Upload</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-cloud-upload me-2"></i>
+                    Upload de Documentos
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" id="upload-form">
+                    {% csrf_token %}
+                    
+                    <!-- Área de Upload Principal -->
+                    <div class="upload-zone mb-4" id="upload-zone">
+                        <div class="upload-area" id="upload-area">
+                            <div class="text-center py-5">
+                                <i class="bi bi-cloud-upload text-primary" style="font-size: 4rem;"></i>
+                                <h4 class="mt-3">Arraste arquivos aqui ou clique para selecionar</h4>
+                                <p class="text-muted mb-3">
+                                    Formatos aceitos: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG<br>
+                                    Tamanho máximo por arquivo: 50MB
+                                </p>
+                                <input type="file" id="file-input" name="arquivos" multiple 
+                                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" 
+                                       class="d-none">
+                                <button type="button" class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+                                    <i class="bi bi-folder2-open me-2"></i>Selecionar Arquivos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de Arquivos Selecionados -->
+                    <div id="files-container" style="display: none;">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-files me-2"></i>
+                                    Arquivos Selecionados (<span id="files-count">0</span>)
+                                </h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div id="files-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Configurações Globais -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo de Documento (Padrão)</label>
+                            <select name="tipo_padrao" class="form-select" id="tipo-padrao">
+                                <option value="">Selecionar individualmente</option>
+                                <option value="peticao">Petição</option>
+                                <option value="contrato">Contrato</option>
+                                <option value="procuracao">Procuração</option>
+                                <option value="certidao">Certidão</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                            <div class="form-text">Aplicar este tipo a todos os arquivos (pode ser alterado individualmente)</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Processo (Padrão)</label>
+                            <select name="processo_padrao" class="form-select" id="processo-padrao">
+                                <option value="">Selecionar individualmente</option>
+                                {% for processo in processos %}
+                                    <option value="{{ processo.pk }}">
+                                        {{ processo.numero_processo }} - {{ processo.cliente.nome_razao_social|truncatechars:30 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Vincular todos os arquivos a este processo</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Descrição (Padrão)</label>
+                            <textarea name="descricao_padrao" class="form-control" rows="2" 
+                                      placeholder="Descrição que será aplicada a todos os documentos..."></textarea>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Configurações</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="confidencial_padrao" id="confidencial-padrao">
+                                <label class="form-check-label" for="confidencial-padrao">
+                                    Marcar todos como confidenciais
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="gerar_hash" id="gerar-hash" checked>
+                                <label class="form-check-label" for="gerar-hash">
+                                    Gerar hash de integridade
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="notificar_upload" id="notificar-upload">
+                                <label class="form-check-label" for="notificar-upload">
+                                    Notificar responsáveis
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botões de Ação -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary" onclick="limparTodos()">
+                                <i class="bi bi-x-circle me-2"></i>Limpar Todos
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="aplicarPadroes()">
+                                <i class="bi bi-arrow-down-circle me-2"></i>Aplicar Padrões
+                            </button>
+                        </div>
+                        <div>
+                            <a href="{% url 'documentos:lista' %}" class="btn btn-secondary me-2">
+                                <i class="bi bi-arrow-left me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="btn-upload" disabled>
+                                <i class="bi bi-cloud-upload me-2"></i>
+                                <span id="upload-text">Fazer Upload</span>
+                                <span id="upload-progress" style="display: none;">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    Enviando...
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Progresso do Upload -->
+        <div class="card mt-4" id="progress-card" style="display: none;">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-upload me-2"></i>
+                    Progresso do Upload
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="progress mb-3" style="height: 20px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         id="upload-progress-bar" 
+                         role="progressbar" 
+                         style="width: 0%">
+                        <span id="progress-text">0%</span>
+                    </div>
+                </div>
+                <div id="upload-status"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.upload-area {
+    border: 3px dashed #dee2e6;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.upload-area:hover {
+    border-color: #0d6efd;
+    background-color: #e3f2fd;
+    transform: scale(1.01);
+}
+
+.upload-area.dragover {
+    border-color: #0d6efd;
+    background-color: #e3f2fd;
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px rgba(13, 110, 253, 0.15);
+}
+
+.file-item {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    background-color: #fff;
+    transition: all 0.2s ease;
+}
+
+.file-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-color: #0d6efd;
+}
+
+.file-icon {
+    font-size: 2rem;
+}
+
+.file-info {
+    flex-grow: 1;
+}
+
+.file-controls {
+    min-width: 300px;
+}
+
+.progress {
+    background-color: #e9ecef;
+}
+
+.upload-zone.uploading .upload-area {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.file-item.uploading {
+    background-color: #f8f9fa;
+    opacity: 0.8;
+}
+
+.file-item.success {
+    border-color: #198754;
+    background-color: #d1e7dd;
+}
+
+.file-item.error {
+    border-color: #dc3545;
+    background-color: #f8d7da;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedFiles = [];
+let uploadInProgress = false;
+
+// Elementos DOM
+const uploadArea = document.getElementById('upload-area');
+const fileInput = document.getElementById('file-input');
+const filesContainer = document.getElementById('files-container');
+const filesList = document.getElementById('files-list');
+const filesCount = document.getElementById('files-count');
+const btnUpload = document.getElementById('btn-upload');
+const progressCard = document.getElementById('progress-card');
+const uploadForm = document.getElementById('upload-form');
+
+// Event Listeners
+uploadArea.addEventListener('click', () => {
+    if (!uploadInProgress) fileInput.click();
+});
+
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    if (!uploadInProgress) uploadArea.classList.add('dragover');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    if (!uploadInProgress) {
+        const files = Array.from(e.dataTransfer.files);
+        addFiles(files);
+    }
+});
+
+fileInput.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files);
+    addFiles(files);
+});
+
+// Adicionar arquivos
+function addFiles(files) {
+    files.forEach(file => {
+        if (validateFile(file)) {
+            const fileId = 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            selectedFiles.push({
+                id: fileId,
+                file: file,
+                nome: file.name.replace(/\.[^/.]+$/, ""), // Remove extensão
+                tipo: '',
+                processo: '',
+                descricao: '',
+                confidencial: false
+            });
+        }
+    });
+    
+    updateFilesList();
+    updateUploadButton();
+}
+
+// Validar arquivo
+function validateFile(file) {
+    // Verificar tamanho (50MB)
+    if (file.size > 50 * 1024 * 1024) {
+        alert(`Arquivo "${file.name}" é muito grande. Tamanho máximo: 50MB`);
+        return false;
+    }
+    
+    // Verificar extensão
+    const allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.jpg', '.jpeg', '.png'];
+    const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    
+    if (!allowedExtensions.includes(extension)) {
+        alert(`Formato do arquivo "${file.name}" não é permitido.`);
+        return false;
+    }
+    
+    // Verificar se já existe
+    if (selectedFiles.some(f => f.file.name === file.name && f.file.size === file.size)) {
+        alert(`Arquivo "${file.name}" já foi selecionado.`);
+        return false;
+    }
+    
+    return true;
+}
+
+// Atualizar lista de arquivos
+function updateFilesList() {
+    if (selectedFiles.length === 0) {
+        filesContainer.style.display = 'none';
+        return;
+    }
+    
+    filesContainer.style.display = 'block';
+    filesCount.textContent = selectedFiles.length;
+    
+    filesList.innerHTML = selectedFiles.map(fileData => {
+        const file = fileData.file;
+        const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+        
+        let iconClass = 'bi-file-earmark';
+        let iconColor = 'text-secondary';
+        
+        if (extension === '.pdf') {
+            iconClass = 'bi-file-earmark-pdf';
+            iconColor = 'text-danger';
+        } else if (['.doc', '.docx'].includes(extension)) {
+            iconClass = 'bi-file-earmark-word';
+            iconColor = 'text-primary';
+        } else if (['.xls', '.xlsx'].includes(extension)) {
+            iconClass = 'bi-file-earmark-excel';
+            iconColor = 'text-success';
+        } else if (['.jpg', '.jpeg', '.png'].includes(extension)) {
+            iconClass = 'bi-file-earmark-image';
+            iconColor = 'text-info';
+        }
+        
+        return `
+            <div class="file-item d-flex align-items-center" data-file-id="${fileData.id}">
+                <div class="file-icon me-3">
+                    <i class="bi ${iconClass} ${iconColor}"></i>
+                </div>
+                <div class="file-info me-3">
+                    <h6 class="mb-1">${file.name}</h6>
+                    <small class="text-muted">${formatFileSize(file.size)}</small>
+                </div>
+                <div class="file-controls">
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control form-control-sm" 
+                                   placeholder="Nome do documento" 
+                                   value="${fileData.nome}"
+                                   onchange="updateFileData('${fileData.id}', 'nome', this.value)">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select form-select-sm" 
+                                    onchange="updateFileData('${fileData.id}', 'tipo', this.value)">
+                                <option value="">Tipo</option>
+                                <option value="peticao" ${fileData.tipo === 'peticao' ? 'selected' : ''}>Petição</option>
+                                <option value="contrato" ${fileData.tipo === 'contrato' ? 'selected' : ''}>Contrato</option>
+                                <option value="procuracao" ${fileData.tipo === 'procuracao' ? 'selected' : ''}>Procuração</option>
+                                <option value="certidao" ${fileData.tipo === 'certidao' ? 'selected' : ''}>Certidão</option>
+                                <option value="outros" ${fileData.tipo === 'outros' ? 'selected' : ''}>Outros</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select form-select-sm" 
+                                    onchange="updateFileData('${fileData.id}', 'processo', this.value)">
+                                <option value="">Processo</option>
+                                {% for processo in processos %}
+                                    <option value="{{ processo.pk }}" ${fileData.processo === '{{ processo.pk }}' ? 'selected' : ''}>
+                                        {{ processo.numero_processo }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-outline-danger btn-sm" 
+                                    onclick="removeFile('${fileData.id}')" title="Remover">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row g-2 mt-1">
+                        <div class="col-md-8">
+                            <input type="text" class="form-control form-control-sm" 
+                                   placeholder="Descrição (opcional)" 
+                                   value="${fileData.descricao}"
+                                   onchange="updateFileData('${fileData.id}', 'descricao', this.value)">
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                       ${fileData.confidencial ? 'checked' : ''}
+                                       onchange="updateFileData('${fileData.id}', 'confidencial', this.checked)">
+                                <label class="form-check-label small">Confidencial</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Atualizar dados do arquivo
+function updateFileData(fileId, field, value) {
+    const fileIndex = selectedFiles.findIndex(f => f.id === fileId);
+    if (fileIndex !== -1) {
+        selectedFiles[fileIndex][field] = value;
+    }
+}
+
+// Remover arquivo
+function removeFile(fileId) {
+    selectedFiles = selectedFiles.filter(f => f.id !== fileId);
+    updateFilesList();
+    updateUploadButton();
+}
+
+// Limpar todos os arquivos
+function limparTodos() {
+    if (uploadInProgress) return;
+    
+    selectedFiles = [];
+    updateFilesList();
+    updateUploadButton();
+    fileInput.value = '';
+}
+
+// Aplicar padrões
+function aplicarPadroes() {
+    const tipoPadrao = document.getElementById('tipo-padrao').value;
+    const processoPadrao = document.getElementById('processo-padrao').value;
+    const descricaoPadrao = document.querySelector('[name="descricao_padrao"]').value;
+    const confidencialPadrao = document.getElementById('confidencial-padrao').checked;
+    
+    selectedFiles.forEach(fileData => {
+        if (tipoPadrao && !fileData.tipo) fileData.tipo = tipoPadrao;
+        if (processoPadrao && !fileData.processo) fileData.processo = processoPadrao;
+        if (descricaoPadrao && !fileData.descricao) fileData.descricao = descricaoPadrao;
+        if (confidencialPadrao) fileData.confidencial = true;
+    });
+    
+    updateFilesList();
+}
+
+// Atualizar botão de upload
+function updateUploadButton() {
+    btnUpload.disabled = selectedFiles.length === 0 || uploadInProgress;
+}
+
+// Formatar tamanho do arquivo
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Submit do formulário
+uploadForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    if (selectedFiles.length === 0) {
+        alert('Selecione pelo menos um arquivo.');
+        return;
+    }
+    
+    // Validar se todos os arquivos têm tipo
+    const filesWithoutType = selectedFiles.filter(f => !f.tipo);
+    if (filesWithoutType.length > 0) {
+        alert('Todos os arquivos devem ter um tipo definido.');
+        return;
+    }
+    
+    uploadInProgress = true;
+    updateUploadButton();
+    
+    // Mostrar progresso
+    progressCard.style.display = 'block';
+    document.getElementById('upload-text').style.display = 'none';
+    document.getElementById('upload-progress').style.display = 'inline';
+    
+    // Upload dos arquivos
+    await uploadFiles();
+});
+
+// Upload dos arquivos
+async function uploadFiles() {
+    const totalFiles = selectedFiles.length;
+    let uploadedFiles = 0;
+    let errors = [];
+    
+    for (let i = 0; i < selectedFiles.length; i++) {
+        const fileData = selectedFiles[i];
+        const fileItem = document.querySelector(`[data-file-id="${fileData.id}"]`);
+        
+        try {
+            fileItem.classList.add('uploading');
+            
+            const formData = new FormData();
+            // Verificar se o usuário está autenticado
+            if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+                throw new Error('Sessão expirada. Faça login novamente.');
+            }
+            
+            formData.append('arquivo', fileData.file);
+            formData.append('nome', fileData.nome);
+            formData.append('tipo', fileData.tipo);
+            formData.append('processo', fileData.processo);
+            formData.append('descricao', fileData.descricao);
+            formData.append('confidencial', fileData.confidencial);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+            
+            const response = await fetch('{% url "documentos:upload" %}', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('Sessão expirada. Faça login novamente.');
+                }
+                throw new Error(`Erro ${response.status}: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            if (result.success) {
+                fileItem.classList.remove('uploading');
+                fileItem.classList.add('success');
+                uploadedFiles++;
+            } else {
+                throw new Error(result.message || 'Erro desconhecido');
+            }
+            
+        } catch (error) {
+            fileItem.classList.remove('uploading');
+            fileItem.classList.add('error');
+            errors.push(`${fileData.file.name}: ${error.message}`);
+        }
+        
+        // Atualizar progresso
+        const progress = ((i + 1) / totalFiles) * 100;
+        document.getElementById('upload-progress-bar').style.width = progress + '%';
+        document.getElementById('progress-text').textContent = Math.round(progress) + '%';
+        
+        // Atualizar status
+        document.getElementById('upload-status').innerHTML = `
+            <div class="d-flex justify-content-between">
+                <span>Processados: ${i + 1} de ${totalFiles}</span>
+                <span>Sucessos: ${uploadedFiles} | Erros: ${errors.length}</span>
+            </div>
+        `;
+    }
+    
+    // Finalizar upload
+    uploadInProgress = false;
+    document.getElementById('upload-text').style.display = 'inline';
+    document.getElementById('upload-progress').style.display = 'none';
+    
+    if (errors.length === 0) {
+        alert(`Todos os ${uploadedFiles} arquivos foram enviados com sucesso!`);
+        window.location.href = '{% url "documentos:lista" %}';
+    } else {
+        alert(`Upload concluído com ${uploadedFiles} sucessos e ${errors.length} erros.\n\nErros:\n${errors.join('\n')}`);
+    }
+    
+    updateUploadButton();
+}
+</script>
+{% endblock %}

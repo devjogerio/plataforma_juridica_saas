@@ -1,0 +1,595 @@
+{% extends 'base.html' %}
+
+{% block title %}Notificações - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Notificações{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item active">Notificações</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .notification-card {
+        transition: all 0.2s ease;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 15px;
+        position: relative;
+    }
+    
+    .notification-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    .notification-card.unread {
+        border-left: 4px solid #007bff;
+        background-color: #f8f9ff;
+    }
+    
+    .notification-card.read {
+        border-left: 4px solid #6c757d;
+        background-color: #f8f9fa;
+    }
+    
+    .notification-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    
+    .notification-prazo {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .notification-financeiro {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .notification-processo {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .notification-sistema {
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
+    
+    .filters-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .btn-filter {
+        border-radius: 20px;
+        padding: 8px 20px;
+        font-weight: 500;
+        margin-right: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .notification-time {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .notification-actions {
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    
+    .notification-card:hover .notification-actions {
+        opacity: 1;
+    }
+    
+    .priority-high {
+        border-left-color: #dc3545 !important;
+    }
+    
+    .priority-medium {
+        border-left-color: #ffc107 !important;
+    }
+    
+    .priority-low {
+        border-left-color: #28a745 !important;
+    }
+    
+    .notification-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 0.7rem;
+        padding: 2px 6px;
+        border-radius: 10px;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <h3>{{ total_notificacoes }}</h3>
+            <p class="mb-0">Total</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <h3>{{ nao_lidas }}</h3>
+            <p class="mb-0">Não Lidas</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <h3>{{ hoje }}</h3>
+            <p class="mb-0">Hoje</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <h3>{{ urgentes }}</h3>
+            <p class="mb-0">Urgentes</p>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="filters-card">
+    <form method="get" id="filtroForm">
+        <div class="row align-items-end">
+            <div class="col-md-2">
+                <label class="form-label">Tipo</label>
+                <select name="tipo" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="prazo" {% if request.GET.tipo == 'prazo' %}selected{% endif %}>Prazos</option>
+                    <option value="financeiro" {% if request.GET.tipo == 'financeiro' %}selected{% endif %}>Financeiro</option>
+                    <option value="processo" {% if request.GET.tipo == 'processo' %}selected{% endif %}>Processos</option>
+                    <option value="sistema" {% if request.GET.tipo == 'sistema' %}selected{% endif %}>Sistema</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="nao_lida" {% if request.GET.status == 'nao_lida' %}selected{% endif %}>Não Lidas</option>
+                    <option value="lida" {% if request.GET.status == 'lida' %}selected{% endif %}>Lidas</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Prioridade</label>
+                <select name="prioridade" class="form-select">
+                    <option value="">Todas</option>
+                    <option value="alta" {% if request.GET.prioridade == 'alta' %}selected{% endif %}>Alta</option>
+                    <option value="media" {% if request.GET.prioridade == 'media' %}selected{% endif %}>Média</option>
+                    <option value="baixa" {% if request.GET.prioridade == 'baixa' %}selected{% endif %}>Baixa</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Data Inicial</label>
+                <input type="date" name="data_inicial" class="form-control" value="{{ request.GET.data_inicial }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Data Final</label>
+                <input type="date" name="data_final" class="form-control" value="{{ request.GET.data_final }}">
+            </div>
+            <div class="col-md-2">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-filter">
+                        <i class="bi bi-search me-1"></i>Filtrar
+                    </button>
+                    <a href="{% url 'notificacoes:lista' %}" class="btn btn-outline-secondary btn-filter">
+                        <i class="bi bi-x-circle me-1"></i>Limpar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Ações em Lote -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5>Notificações</h5>
+            <div>
+                <button class="btn btn-outline-primary btn-sm me-2" onclick="marcarTodasComoLidas()">
+                    <i class="bi bi-check-all me-1"></i>Marcar Todas como Lidas
+                </button>
+                <button class="btn btn-outline-danger btn-sm me-2" onclick="excluirSelecionadas()">
+                    <i class="bi bi-trash me-1"></i>Excluir Selecionadas
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="toggleSelecaoTodas()">
+                    <i class="bi bi-check-square me-1"></i>Selecionar Todas
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Notificações -->
+<div class="row">
+    <div class="col-12">
+        {% for notificacao in notificacoes %}
+        <div class="notification-card {% if not notificacao.lida %}unread{% else %}read{% endif %} priority-{{ notificacao.prioridade }}">
+            {% if notificacao.prioridade == 'alta' %}
+                <span class="notification-badge bg-danger text-white">URGENTE</span>
+            {% elif notificacao.prioridade == 'media' %}
+                <span class="notification-badge bg-warning text-dark">IMPORTANTE</span>
+            {% endif %}
+            
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-1">
+                        <div class="form-check">
+                            <input class="form-check-input notification-checkbox" type="checkbox" value="{{ notificacao.pk }}" id="notif{{ notificacao.pk }}">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-1">
+                        <div class="notification-icon notification-{{ notificacao.tipo }}">
+                            {% if notificacao.tipo == 'prazo' %}
+                                <i class="bi bi-clock"></i>
+                            {% elif notificacao.tipo == 'financeiro' %}
+                                <i class="bi bi-currency-dollar"></i>
+                            {% elif notificacao.tipo == 'processo' %}
+                                <i class="bi bi-folder"></i>
+                            {% else %}
+                                <i class="bi bi-gear"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="mb-1 {% if not notificacao.lida %}fw-bold{% endif %}">
+                            {{ notificacao.titulo }}
+                        </h6>
+                        <p class="mb-1 text-muted">{{ notificacao.mensagem|truncatechars:100 }}</p>
+                        <div class="notification-time">
+                            <i class="bi bi-clock me-1"></i>{{ notificacao.data_criacao|timesince }} atrás
+                            {% if notificacao.data_prazo %}
+                                | <i class="bi bi-calendar me-1"></i>Prazo: {{ notificacao.data_prazo|date:"d/m/Y H:i" }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <span class="badge 
+                            {% if notificacao.tipo == 'prazo' %}bg-warning
+                            {% elif notificacao.tipo == 'financeiro' %}bg-info
+                            {% elif notificacao.tipo == 'processo' %}bg-success
+                            {% else %}bg-secondary{% endif %}">
+                            {{ notificacao.get_tipo_display }}
+                        </span>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <div class="notification-actions">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    {% if not notificacao.lida %}
+                                    <li>
+                                        <button class="dropdown-item" onclick="marcarComoLida('{{ notificacao.pk }}')">
+                                            <i class="bi bi-check me-2"></i>Marcar como Lida
+                                        </button>
+                                    </li>
+                                    {% else %}
+                                    <li>
+                                        <button class="dropdown-item" onclick="marcarComoNaoLida('{{ notificacao.pk }}')">
+                                            <i class="bi bi-x me-2"></i>Marcar como Não Lida
+                                        </button>
+                                    </li>
+                                    {% endif %}
+                                    {% if notificacao.link_acao %}
+                                    <li>
+                                        <a class="dropdown-item" href="{{ notificacao.link_acao }}">
+                                            <i class="bi bi-arrow-right me-2"></i>Ver Detalhes
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <button class="dropdown-item text-danger" onclick="excluirNotificacao('{{ notificacao.pk }}')">
+                                            <i class="bi bi-trash me-2"></i>Excluir
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-5">
+            <i class="bi bi-bell-slash display-1 text-muted"></i>
+            <h4 class="text-muted mt-3">Nenhuma notificação encontrada</h4>
+            <p class="text-muted">Ajuste os filtros ou aguarde novas notificações.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Paginação -->
+{% if is_paginated %}
+<div class="row mt-4">
+    <div class="col-12">
+        <nav aria-label="Navegação de páginas">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.prioridade %}&prioridade={{ request.GET.prioridade }}{% endif %}{% if request.GET.data_inicial %}&data_inicial={{ request.GET.data_inicial }}{% endif %}{% if request.GET.data_final %}&data_final={{ request.GET.data_final }}{% endif %}">Primeira</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.prioridade %}&prioridade={{ request.GET.prioridade }}{% endif %}{% if request.GET.data_inicial %}&data_inicial={{ request.GET.data_inicial }}{% endif %}{% if request.GET.data_final %}&data_final={{ request.GET.data_final }}{% endif %}">Anterior</a>
+                    </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                </li>
+                
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.prioridade %}&prioridade={{ request.GET.prioridade }}{% endif %}{% if request.GET.data_inicial %}&data_inicial={{ request.GET.data_inicial }}{% endif %}{% if request.GET.data_final %}&data_final={{ request.GET.data_final }}{% endif %}">Próxima</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.prioridade %}&prioridade={{ request.GET.prioridade }}{% endif %}{% if request.GET.data_inicial %}&data_inicial={{ request.GET.data_inicial }}{% endif %}{% if request.GET.data_final %}&data_final={{ request.GET.data_final }}{% endif %}">Última</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let todasSelecionadas = false;
+
+function toggleSelecaoTodas() {
+    const checkboxes = document.querySelectorAll('.notification-checkbox');
+    todasSelecionadas = !todasSelecionadas;
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = todasSelecionadas;
+    });
+    
+    const btn = document.querySelector('[onclick="toggleSelecaoTodas()"]');
+    if (todasSelecionadas) {
+        btn.innerHTML = '<i class="bi bi-square me-1"></i>Desmarcar Todas';
+    } else {
+        btn.innerHTML = '<i class="bi bi-check-square me-1"></i>Selecionar Todas';
+    }
+}
+
+function marcarComoLida(id) {
+    // Verificar se o usuário está autenticado
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        alert('Sessão expirada. Faça login novamente.');
+        window.location.href = '/login/';
+        return;
+    }
+    
+    fetch(`/notificacoes/${id}/marcar-lida/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erro ao marcar como lida: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        if (error.message.includes('401') || error.message.includes('403')) {
+            alert('Sessão expirada. Faça login novamente.');
+            window.location.href = '/login/';
+        } else {
+            alert('Erro ao processar solicitação');
+        }
+    });
+}
+
+function marcarComoNaoLida(id) {
+    // Verificar se o usuário está autenticado
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        alert('Sessão expirada. Faça login novamente.');
+        window.location.href = '/login/';
+        return;
+    }
+    
+    fetch(`/notificacoes/${id}/marcar-nao-lida/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erro ao marcar como não lida: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        if (error.message.includes('401') || error.message.includes('403')) {
+            alert('Sessão expirada. Faça login novamente.');
+            window.location.href = '/login/';
+        } else {
+            alert('Erro ao processar solicitação');
+        }
+    });
+}
+
+function marcarTodasComoLidas() {
+    // Verificar se o usuário está autenticado
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        alert('Sessão expirada. Faça login novamente.');
+        window.location.href = '/login/';
+        return;
+    }
+    
+    if (confirm('Tem certeza que deseja marcar todas as notificações como lidas?')) {
+        fetch('/notificacoes/marcar-todas-lidas/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao marcar todas como lidas: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            if (error.message.includes('401') || error.message.includes('403')) {
+                alert('Sessão expirada. Faça login novamente.');
+                window.location.href = '/login/';
+            } else {
+                alert('Erro ao processar solicitação');
+            }
+        });
+    }
+}
+
+function excluirNotificacao(id) {
+    // Verificar se o usuário está autenticado
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        alert('Sessão expirada. Faça login novamente.');
+        window.location.href = '/login/';
+        return;
+    }
+    
+    if (confirm('Tem certeza que deseja excluir esta notificação?')) {
+        fetch(`/notificacoes/${id}/excluir/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao excluir notificação: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            if (error.message.includes('401') || error.message.includes('403')) {
+                alert('Sessão expirada. Faça login novamente.');
+                window.location.href = '/login/';
+            } else {
+                alert('Erro ao processar solicitação');
+            }
+        });
+    }
+}
+
+function excluirSelecionadas() {
+    const checkboxes = document.querySelectorAll('.notification-checkbox:checked');
+    if (checkboxes.length === 0) {
+        alert('Selecione pelo menos uma notificação para excluir.');
+        return;
+    }
+    
+    if (confirm(`Tem certeza que deseja excluir ${checkboxes.length} notificação(ões) selecionada(s)?`)) {
+        const ids = Array.from(checkboxes).map(cb => cb.value);
+        
+        fetch('/notificacoes/excluir-multiplas/', {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ids: ids })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao excluir notificações: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao processar solicitação');
+        });
+    }
+}
+
+// Auto-submit do formulário de filtros
+document.addEventListener('DOMContentLoaded', function() {
+    const selects = document.querySelectorAll('#filtroForm select, #filtroForm input[type="date"]');
+    selects.forEach(select => {
+        select.addEventListener('change', function() {
+            setTimeout(() => {
+                document.getElementById('filtroForm').submit();
+            }, 100);
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,444 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cadastrar Cliente - Plataforma Jurídica{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+    
+    .section-title {
+        color: #374151;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e5e7eb;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+    }
+    
+    .btn-secondary {
+        border-radius: 8px;
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .tipo-pessoa-toggle {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .tipo-pessoa-toggle .btn {
+        border-radius: 6px;
+        border: none;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+    }
+    
+    .tipo-pessoa-toggle .btn.active {
+        background: #667eea;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="bi bi-person-plus-fill me-2"></i>
+                Cadastrar Cliente
+            </h1>
+            <p class="text-muted mb-0">Preencha os dados do novo cliente</p>
+        </div>
+        <a href="{% url 'clientes:lista' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>
+            Voltar à Lista
+        </a>
+    </div>
+
+    <form method="post" id="clienteForm">
+        {% csrf_token %}
+        
+        <!-- Tipo de Pessoa -->
+        <div class="form-section">
+            <h4 class="section-title">
+                <i class="bi bi-person-badge me-2"></i>
+                Tipo de Cliente
+            </h4>
+            
+            <div class="tipo-pessoa-toggle">
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="tipo_pessoa" id="pf" value="PF" 
+                           {% if form.tipo_pessoa.value == 'PF' or not form.tipo_pessoa.value %}checked{% endif %}>
+                    <label class="btn btn-outline-primary" for="pf">
+                        <i class="bi bi-person me-2"></i>
+                        Pessoa Física
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="tipo_pessoa" id="pj" value="PJ"
+                           {% if form.tipo_pessoa.value == 'PJ' %}checked{% endif %}>
+                    <label class="btn btn-outline-primary" for="pj">
+                        <i class="bi bi-building me-2"></i>
+                        Pessoa Jurídica
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dados Básicos -->
+        <div class="form-section">
+            <h4 class="section-title">
+                <i class="bi bi-info-circle me-2"></i>
+                Dados Básicos
+            </h4>
+            
+            <div class="row">
+                <div class="col-md-8 mb-3">
+                    <label for="{{ form.nome_razao_social.id_for_label }}" class="form-label required-field">
+                        <span id="label-nome">Nome Completo</span>
+                    </label>
+                    {{ form.nome_razao_social }}
+                    {% if form.nome_razao_social.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.nome_razao_social.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.cpf_cnpj.id_for_label }}" class="form-label required-field">
+                        <span id="label-documento">CPF</span>
+                    </label>
+                    {{ form.cpf_cnpj }}
+                    {% if form.cpf_cnpj.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.cpf_cnpj.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row" id="dados-pf">
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.data_nascimento_fundacao.id_for_label }}" class="form-label">
+                        <span id="label-data">Data de Nascimento</span>
+                    </label>
+                    {{ form.data_nascimento_fundacao }}
+                    {% if form.data_nascimento_fundacao.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.data_nascimento_fundacao.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.estado_civil.id_for_label }}" class="form-label">
+                        Estado Civil
+                    </label>
+                    {{ form.estado_civil }}
+                    {% if form.estado_civil.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.estado_civil.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.profissao_atividade.id_for_label }}" class="form-label">
+                        <span id="label-profissao">Profissão</span>
+                    </label>
+                    {{ form.profissao_atividade }}
+                    {% if form.profissao_atividade.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.profissao_atividade.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Contato -->
+        <div class="form-section">
+            <h4 class="section-title">
+                <i class="bi bi-telephone me-2"></i>
+                Informações de Contato
+            </h4>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                        E-mail
+                    </label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.email.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <label for="{{ form.telefone.id_for_label }}" class="form-label">
+                        Telefone
+                    </label>
+                    {{ form.telefone }}
+                    {% if form.telefone.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.telefone.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <label for="{{ form.celular.id_for_label }}" class="form-label">
+                        Celular
+                    </label>
+                    {{ form.celular }}
+                    {% if form.celular.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.celular.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Endereço -->
+        <div class="form-section">
+            <h4 class="section-title">
+                <i class="bi bi-geo-alt me-2"></i>
+                Endereço
+            </h4>
+            
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="{{ form.cep.id_for_label }}" class="form-label">
+                        CEP
+                    </label>
+                    {{ form.cep }}
+                    {% if form.cep.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.cep.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-7 mb-3">
+                    <label for="{{ form.endereco.id_for_label }}" class="form-label">
+                        Endereço
+                    </label>
+                    {{ form.endereco }}
+                    {% if form.endereco.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.endereco.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-2 mb-3">
+                    <label for="{{ form.numero.id_for_label }}" class="form-label">
+                        Número
+                    </label>
+                    {{ form.numero }}
+                    {% if form.numero.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.numero.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.complemento.id_for_label }}" class="form-label">
+                        Complemento
+                    </label>
+                    {{ form.complemento }}
+                    {% if form.complemento.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.complemento.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.bairro.id_for_label }}" class="form-label">
+                        Bairro
+                    </label>
+                    {{ form.bairro }}
+                    {% if form.bairro.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.bairro.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.cidade.id_for_label }}" class="form-label">
+                        Cidade
+                    </label>
+                    {{ form.cidade }}
+                    {% if form.cidade.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.cidade.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.estado.id_for_label }}" class="form-label">
+                        Estado
+                    </label>
+                    {{ form.estado }}
+                    {% if form.estado.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.estado.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.nacionalidade.id_for_label }}" class="form-label">
+                        Nacionalidade
+                    </label>
+                    {{ form.nacionalidade }}
+                    {% if form.nacionalidade.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.nacionalidade.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Observações -->
+        <div class="form-section">
+            <h4 class="section-title">
+                <i class="bi bi-chat-text me-2"></i>
+                Observações
+            </h4>
+            
+            <div class="mb-3">
+                <label for="{{ form.observacoes.id_for_label }}" class="form-label">
+                    Observações Gerais
+                </label>
+                {{ form.observacoes }}
+                {% if form.observacoes.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.observacoes.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Botões -->
+        <div class="d-flex justify-content-end gap-3 mb-4">
+            <a href="{% url 'clientes:lista' %}" class="btn btn-secondary">
+                <i class="bi bi-x-circle me-2"></i>
+                Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle me-2"></i>
+                Salvar Cliente
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoPessoaInputs = document.querySelectorAll('input[name="tipo_pessoa"]');
+    const labelNome = document.getElementById('label-nome');
+    const labelDocumento = document.getElementById('label-documento');
+    const labelData = document.getElementById('label-data');
+    const labelProfissao = document.getElementById('label-profissao');
+    const dadosPF = document.getElementById('dados-pf');
+    
+    function updateLabels() {
+        const tipoPessoa = document.querySelector('input[name="tipo_pessoa"]:checked').value;
+        
+        if (tipoPessoa === 'PJ') {
+            labelNome.textContent = 'Razão Social';
+            labelDocumento.textContent = 'CNPJ';
+            labelData.textContent = 'Data de Fundação';
+            labelProfissao.textContent = 'Atividade';
+            dadosPF.style.display = 'none';
+        } else {
+            labelNome.textContent = 'Nome Completo';
+            labelDocumento.textContent = 'CPF';
+            labelData.textContent = 'Data de Nascimento';
+            labelProfissao.textContent = 'Profissão';
+            dadosPF.style.display = 'flex';
+        }
+    }
+    
+    tipoPessoaInputs.forEach(input => {
+        input.addEventListener('change', updateLabels);
+    });
+    
+    // Inicializar labels
+    updateLabels();
+    
+    // Máscara para CEP
+    const cepInput = document.getElementById('{{ form.cep.id_for_label }}');
+    if (cepInput) {
+        cepInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 8) {
+                value = value.replace(/(\d{5})(\d)/, '$1-$2');
+                e.target.value = value;
+            }
+        });
+    }
+    
+    // Buscar CEP
+    if (cepInput) {
+        cepInput.addEventListener('blur', function() {
+            const cep = this.value.replace(/\D/g, '');
+            if (cep.length === 8) {
+                fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.erro) {
+                            document.getElementById('{{ form.endereco.id_for_label }}').value = data.logradouro || '';
+                            document.getElementById('{{ form.bairro.id_for_label }}').value = data.bairro || '';
+                            document.getElementById('{{ form.cidade.id_for_label }}').value = data.localidade || '';
+                            document.getElementById('{{ form.estado.id_for_label }}').value = data.uf || '';
+                        }
+                    })
+                    .catch(error => console.log('Erro ao buscar CEP:', error));
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

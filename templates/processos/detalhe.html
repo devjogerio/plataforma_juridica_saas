@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ processo.numero_processo }} - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Detalhes do Processo{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'processos:lista' %}">Processos</a></li>
+<li class="breadcrumb-item active">{{ processo.numero_processo }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group" role="group">
+    <a href="{% url 'processos:editar' processo.pk %}" class="btn btn-primary">
+        <i class="bi bi-pencil me-2"></i>Editar
+    </a>
+    <a href="{% url 'processos:andamentos' processo.pk %}" class="btn btn-outline-info">
+        <i class="bi bi-list-ul me-2"></i>Andamentos
+    </a>
+    <a href="{% url 'processos:prazos' processo.pk %}" class="btn btn-outline-warning">
+        <i class="bi bi-calendar-event me-2"></i>Prazos
+    </a>
+    <a href="{% url 'documentos:processo' processo.pk %}" class="btn btn-outline-secondary">
+        <i class="bi bi-file-earmark me-2"></i>Documentos
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Informações Principais -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Informações do Processo
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-5">Número:</dt>
+                            <dd class="col-sm-7">{{ processo.numero_processo }}</dd>
+                            
+                            <dt class="col-sm-5">Tipo:</dt>
+                            <dd class="col-sm-7">{{ processo.tipo_processo }}</dd>
+                            
+                            <dt class="col-sm-5">Área do Direito:</dt>
+                            <dd class="col-sm-7">{{ processo.area_direito }}</dd>
+                            
+                            <dt class="col-sm-5">Status:</dt>
+                            <dd class="col-sm-7">
+                                {% if processo.status == 'ativo' %}
+                                    <span class="badge bg-success">Ativo</span>
+                                {% elif processo.status == 'suspenso' %}
+                                    <span class="badge bg-warning">Suspenso</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Encerrado</span>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-sm-5">Valor da Causa:</dt>
+                            <dd class="col-sm-7">
+                                {% if processo.valor_causa %}
+                                    R$ {{ processo.valor_causa|floatformat:2 }}
+                                {% else %}
+                                    Não informado
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-5">Cliente:</dt>
+                            <dd class="col-sm-7">
+                                <a href="{% url 'clientes:detalhe' processo.cliente.pk %}" class="text-decoration-none">
+                                    {{ processo.cliente.nome_razao_social }}
+                                </a>
+                            </dd>
+                            
+                            <dt class="col-sm-5">Responsável:</dt>
+                            <dd class="col-sm-7">{{ processo.usuario_responsavel.get_full_name }}</dd>
+                            
+                            <dt class="col-sm-5">Data Início:</dt>
+                            <dd class="col-sm-7">{{ processo.data_inicio|date:"d/m/Y" }}</dd>
+                            
+                            {% if processo.data_encerramento %}
+                            <dt class="col-sm-5">Data Encerramento:</dt>
+                            <dd class="col-sm-7">{{ processo.data_encerramento|date:"d/m/Y" }}</dd>
+                            {% endif %}
+                            
+                            <dt class="col-sm-5">Comarca/Tribunal:</dt>
+                            <dd class="col-sm-7">{{ processo.comarca_tribunal|default:"Não informado" }}</dd>
+                            
+                            <dt class="col-sm-5">Vara/Órgão:</dt>
+                            <dd class="col-sm-7">{{ processo.vara_orgao|default:"Não informado" }}</dd>
+                        </dl>
+                    </div>
+                </div>
+                
+                {% if processo.observacoes %}
+                <hr>
+                <h6>Observações:</h6>
+                <p class="text-muted">{{ processo.observacoes|linebreaks }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Últimos Andamentos -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ul me-2"></i>
+                    Últimos Andamentos
+                </h5>
+                <a href="{% url 'processos:andamentos' processo.pk %}" class="btn btn-sm btn-outline-primary">
+                    Ver todos
+                </a>
+            </div>
+            <div class="card-body">
+                {% if ultimos_andamentos %}
+                    <div class="timeline">
+                        {% for andamento in ultimos_andamentos %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ andamento.tipo_andamento }}</h6>
+                                        <p class="mb-1 text-muted">{{ andamento.descricao|truncatewords:20 }}</p>
+                                        <small class="text-muted">
+                                            {{ andamento.data_andamento|date:"d/m/Y" }} - 
+                                            {{ andamento.usuario.get_full_name }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-file-text text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2">Nenhum andamento registrado</p>
+                        <a href="{% url 'processos:criar_andamento' processo.pk %}" class="btn btn-sm btn-primary">
+                            Adicionar Primeiro Andamento
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Prazos Pendentes -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-calendar-event me-2"></i>
+                    Prazos Pendentes
+                </h6>
+                <a href="{% url 'processos:prazos' processo.pk %}" class="btn btn-sm btn-outline-warning">
+                    Ver todos
+                </a>
+            </div>
+            <div class="card-body">
+                {% if prazos_pendentes %}
+                    {% for prazo in prazos_pendentes %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            {% if prazo.data_limite|date:'Y-m-d' <= today|date:'Y-m-d' %}
+                                <div class="icon-circle bg-danger">
+                                    <i class="bi bi-exclamation-triangle text-white"></i>
+                                </div>
+                            {% else %}
+                                <div class="icon-circle bg-warning">
+                                    <i class="bi bi-clock text-white"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">{{ prazo.tipo_prazo }}</div>
+                            <div class="small text-muted">{{ prazo.data_limite|date:"d/m/Y" }}</div>
+                            {% if prazo.descricao %}
+                                <div class="small">{{ prazo.descricao|truncatewords:10 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2 mb-0">Nenhum prazo pendente</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Documentos Recentes -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-file-earmark me-2"></i>
+                    Documentos Recentes
+                </h6>
+                <a href="{% url 'documentos:processo' processo.pk %}" class="btn btn-sm btn-outline-secondary">
+                    Ver todos
+                </a>
+            </div>
+            <div class="card-body">
+                {% if documentos %}
+                    {% for documento in documentos %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">{{ documento.nome_arquivo }}</div>
+                            <div class="small text-muted">
+                                {{ documento.tipo_documento }} - {{ documento.created_at|date:"d/m/Y" }}
+                            </div>
+                        </div>
+                        <div>
+                            <a href="{% url 'documentos:download' documento.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-download"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-file-earmark text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2 mb-0">Nenhum documento</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Ações Rápidas -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightning me-2"></i>
+                    Ações Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'processos:criar_andamento' processo.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-plus-circle me-2"></i>Novo Andamento
+                    </a>
+                    <a href="{% url 'processos:criar_prazo' processo.pk %}" class="btn btn-outline-warning btn-sm">
+                        <i class="bi bi-calendar-plus me-2"></i>Novo Prazo
+                    </a>
+                    <a href="{% url 'documentos:upload' %}?processo={{ processo.pk }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-upload me-2"></i>Upload Documento
+                    </a>
+                    <hr>
+                    <a href="{% url 'processos:excluir' processo.pk %}" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash me-2"></i>Excluir Processo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: -22px;
+    top: 20px;
+    height: calc(100% + 10px);
+    width: 2px;
+    background-color: #dee2e6;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -26px;
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.icon-circle {
+    height: 2rem;
+    width: 2rem;
+    border-radius: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+{% endblock %}

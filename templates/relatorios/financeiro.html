@@ -1,0 +1,621 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatórios Financeiros - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Relatórios Financeiros{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'financeiro:dashboard' %}">Financeiro</a></li>
+<li class="breadcrumb-item active">Relatórios</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        margin-bottom: 25px;
+        transition: all 0.3s ease;
+    }
+    
+    .report-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+    }
+    
+    .filters-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 400px;
+        margin: 20px 0;
+    }
+    
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .trend-up {
+        color: #28a745;
+    }
+    
+    .trend-down {
+        color: #dc3545;
+    }
+    
+    .trend-neutral {
+        color: #6c757d;
+    }
+    
+    .export-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .table th {
+        background-color: #f8f9fa;
+        border: none;
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .table td {
+        border: none;
+        vertical-align: middle;
+    }
+    
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .period-selector {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .btn-period {
+        border-radius: 20px;
+        padding: 8px 20px;
+        margin-right: 10px;
+        margin-bottom: 10px;
+        font-weight: 500;
+    }
+    
+    .btn-period.active {
+        background-color: #007bff;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Filtros de Período -->
+<div class="filters-section">
+    <div class="row">
+        <div class="col-md-12">
+            <h5 class="mb-3">Filtros de Período</h5>
+            <form method="get" id="filtroForm">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label">Data Inicial</label>
+                        <input type="date" name="data_inicial" class="form-control" value="{{ request.GET.data_inicial }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Data Final</label>
+                        <input type="date" name="data_final" class="form-control" value="{{ request.GET.data_final }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tipo de Relatório</label>
+                        <select name="tipo_relatorio" class="form-select">
+                            <option value="geral" {% if request.GET.tipo_relatorio == 'geral' %}selected{% endif %}>Geral</option>
+                            <option value="receitas" {% if request.GET.tipo_relatorio == 'receitas' %}selected{% endif %}>Apenas Receitas</option>
+                            <option value="despesas" {% if request.GET.tipo_relatorio == 'despesas' %}selected{% endif %}>Apenas Despesas</option>
+                            <option value="comparativo" {% if request.GET.tipo_relatorio == 'comparativo' %}selected{% endif %}>Comparativo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-light me-2">
+                            <i class="bi bi-search me-1"></i>Gerar Relatório
+                        </button>
+                        <a href="{% url 'relatorios:financeiro' %}" class="btn btn-outline-light">
+                            <i class="bi bi-x-circle me-1"></i>Limpar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Seletores de Período Rápido -->
+<div class="period-selector">
+    <div class="d-flex flex-wrap">
+        <button class="btn btn-outline-primary btn-period" onclick="setPeriod('hoje')">Hoje</button>
+        <button class="btn btn-outline-primary btn-period" onclick="setPeriod('semana')">Esta Semana</button>
+        <button class="btn btn-outline-primary btn-period" onclick="setPeriod('mes')">Este Mês</button>
+        <button class="btn btn-outline-primary btn-period" onclick="setPeriod('trimestre')">Este Trimestre</button>
+        <button class="btn btn-outline-primary btn-period" onclick="setPeriod('ano')">Este Ano</button>
+        <button class="btn btn-outline-primary btn-period" onclick="setPeriod('mes_anterior')">Mês Anterior</button>
+        <button class="btn btn-outline-primary btn-period" onclick="setPeriod('ano_anterior')">Ano Anterior</button>
+    </div>
+</div>
+
+<!-- Métricas Principais -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-value">R$ {{ total_receitas|floatformat:2 }}</div>
+            <div class="metric-label">Total Receitas</div>
+            <div class="mt-2">
+                <small class="{% if variacao_receitas > 0 %}trend-up{% elif variacao_receitas < 0 %}trend-down{% else %}trend-neutral{% endif %}">
+                    <i class="bi bi-{% if variacao_receitas > 0 %}arrow-up{% elif variacao_receitas < 0 %}arrow-down{% else %}dash{% endif %}"></i>
+                    {{ variacao_receitas|floatformat:1 }}% vs período anterior
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-value">R$ {{ total_despesas|floatformat:2 }}</div>
+            <div class="metric-label">Total Despesas</div>
+            <div class="mt-2">
+                <small class="{% if variacao_despesas > 0 %}trend-down{% elif variacao_despesas < 0 %}trend-up{% else %}trend-neutral{% endif %}">
+                    <i class="bi bi-{% if variacao_despesas > 0 %}arrow-up{% elif variacao_despesas < 0 %}arrow-down{% else %}dash{% endif %}"></i>
+                    {{ variacao_despesas|floatformat:1 }}% vs período anterior
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-value">R$ {{ lucro_liquido|floatformat:2 }}</div>
+            <div class="metric-label">Lucro Líquido</div>
+            <div class="mt-2">
+                <small class="{% if variacao_lucro > 0 %}trend-up{% elif variacao_lucro < 0 %}trend-down{% else %}trend-neutral{% endif %}">
+                    <i class="bi bi-{% if variacao_lucro > 0 %}arrow-up{% elif variacao_lucro < 0 %}arrow-down{% else %}dash{% endif %}"></i>
+                    {{ variacao_lucro|floatformat:1 }}% vs período anterior
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-value">{{ margem_lucro|floatformat:1 }}%</div>
+            <div class="metric-label">Margem de Lucro</div>
+            <div class="mt-2">
+                <small class="{% if variacao_margem > 0 %}trend-up{% elif variacao_margem < 0 %}trend-down{% else %}trend-neutral{% endif %}">
+                    <i class="bi bi-{% if variacao_margem > 0 %}arrow-up{% elif variacao_margem < 0 %}arrow-down{% else %}dash{% endif %}"></i>
+                    {{ variacao_margem|floatformat:1 }}pp vs período anterior
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="report-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5>Evolução Financeira</h5>
+                <div class="export-buttons">
+                    <button class="btn btn-sm btn-outline-primary" onclick="exportChart('evolucao')">
+                        <i class="bi bi-download me-1"></i>PNG
+                    </button>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="evolucaoChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="report-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5>Distribuição por Tipo</h5>
+                <div class="export-buttons">
+                    <button class="btn btn-sm btn-outline-primary" onclick="exportChart('distribuicao')">
+                        <i class="bi bi-download me-1"></i>PNG
+                    </button>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="distribuicaoChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="report-card">
+            <h5 class="mb-3">Top 5 Clientes por Receita</h5>
+            <div class="chart-container">
+                <canvas id="topClientesChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="report-card">
+            <h5 class="mb-3">Despesas por Categoria</h5>
+            <div class="chart-container">
+                <canvas id="despesasCategoriaChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabelas Detalhadas -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="report-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5>Receitas Detalhadas</h5>
+                <button class="btn btn-sm btn-outline-primary" onclick="exportTable('receitas')">
+                    <i class="bi bi-file-excel me-1"></i>Exportar Excel
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Processo</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for receita in receitas_detalhadas %}
+                        <tr>
+                            <td>{{ receita.cliente.nome_razao_social|truncatechars:30 }}</td>
+                            <td>{{ receita.processo.numero_processo }}</td>
+                            <td class="text-success fw-bold">R$ {{ receita.valor|floatformat:2 }}</td>
+                            <td>
+                                <span class="badge {% if receita.status_pagamento == 'pago' %}bg-success{% else %}bg-warning{% endif %}">
+                                    {{ receita.get_status_pagamento_display }}
+                                </span>
+                            </td>
+                            <td>{{ receita.data_vencimento|date:"d/m/Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">Nenhuma receita encontrada no período</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="report-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5>Despesas Detalhadas</h5>
+                <button class="btn btn-sm btn-outline-primary" onclick="exportTable('despesas')">
+                    <i class="bi bi-file-excel me-1"></i>Exportar Excel
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Categoria</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for despesa in despesas_detalhadas %}
+                        <tr>
+                            <td>{{ despesa.descricao|truncatechars:30 }}</td>
+                            <td>{{ despesa.get_tipo_despesa_display }}</td>
+                            <td class="text-danger fw-bold">R$ {{ despesa.valor|floatformat:2 }}</td>
+                            <td>
+                                <span class="badge {% if despesa.status_reembolso == 'reembolsado' %}bg-success{% else %}bg-warning{% endif %}">
+                                    {{ despesa.get_status_reembolso_display }}
+                                </span>
+                            </td>
+                            <td>{{ despesa.data_despesa|date:"d/m/Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">Nenhuma despesa encontrada no período</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações de Exportação -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="report-card">
+            <h5 class="mb-3">Exportar Relatório Completo</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-success" onclick="exportFullReport('excel')">
+                    <i class="bi bi-file-excel me-1"></i>Exportar para Excel
+                </button>
+                <button class="btn btn-danger" onclick="exportFullReport('pdf')">
+                    <i class="bi bi-file-pdf me-1"></i>Exportar para PDF
+                </button>
+                <button class="btn btn-info" onclick="exportFullReport('csv')">
+                    <i class="bi bi-file-csv me-1"></i>Exportar para CSV
+                </button>
+                <button class="btn btn-secondary" onclick="printReport()">
+                    <i class="bi bi-printer me-1"></i>Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Dados dos gráficos vindos do backend
+const dadosEvolucao = {{ dados_evolucao|safe }};
+const dadosDistribuicao = {{ dados_distribuicao|safe }};
+const dadosTopClientes = {{ dados_top_clientes|safe }};
+const dadosDespesasCategoria = {{ dados_despesas_categoria|safe }};
+
+// Gráfico de Evolução Financeira
+const ctxEvolucao = document.getElementById('evolucaoChart').getContext('2d');
+const evolucaoChart = new Chart(ctxEvolucao, {
+    type: 'line',
+    data: {
+        labels: dadosEvolucao.labels,
+        datasets: [
+            {
+                label: 'Receitas',
+                data: dadosEvolucao.receitas,
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                tension: 0.4
+            },
+            {
+                label: 'Despesas',
+                data: dadosEvolucao.despesas,
+                borderColor: '#dc3545',
+                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                tension: 0.4
+            },
+            {
+                label: 'Lucro Líquido',
+                data: dadosEvolucao.lucro,
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                tension: 0.4
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return 'R$ ' + value.toLocaleString('pt-BR');
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Gráfico de Distribuição
+const ctxDistribuicao = document.getElementById('distribuicaoChart').getContext('2d');
+const distribuicaoChart = new Chart(ctxDistribuicao, {
+    type: 'doughnut',
+    data: {
+        labels: ['Receitas', 'Despesas'],
+        datasets: [{
+            data: [dadosDistribuicao.receitas, dadosDistribuicao.despesas],
+            backgroundColor: ['#28a745', '#dc3545'],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Gráfico Top Clientes
+const ctxTopClientes = document.getElementById('topClientesChart').getContext('2d');
+const topClientesChart = new Chart(ctxTopClientes, {
+    type: 'bar',
+    data: {
+        labels: dadosTopClientes.labels,
+        datasets: [{
+            label: 'Receita (R$)',
+            data: dadosTopClientes.valores,
+            backgroundColor: '#007bff',
+            borderRadius: 5
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return 'R$ ' + value.toLocaleString('pt-BR');
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Gráfico Despesas por Categoria
+const ctxDespesasCategoria = document.getElementById('despesasCategoriaChart').getContext('2d');
+const despesasCategoriaChart = new Chart(ctxDespesasCategoria, {
+    type: 'pie',
+    data: {
+        labels: dadosDespesasCategoria.labels,
+        datasets: [{
+            data: dadosDespesasCategoria.valores,
+            backgroundColor: [
+                '#ff6384',
+                '#36a2eb',
+                '#ffce56',
+                '#4bc0c0',
+                '#9966ff',
+                '#ff9f40'
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Funções de período rápido
+function setPeriod(period) {
+    const today = new Date();
+    let startDate, endDate;
+    
+    switch(period) {
+        case 'hoje':
+            startDate = endDate = today.toISOString().split('T')[0];
+            break;
+        case 'semana':
+            const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+            startDate = startOfWeek.toISOString().split('T')[0];
+            endDate = new Date().toISOString().split('T')[0];
+            break;
+        case 'mes':
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+            endDate = new Date().toISOString().split('T')[0];
+            break;
+        case 'trimestre':
+            const quarter = Math.floor(today.getMonth() / 3);
+            startDate = new Date(today.getFullYear(), quarter * 3, 1).toISOString().split('T')[0];
+            endDate = new Date().toISOString().split('T')[0];
+            break;
+        case 'ano':
+            startDate = new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0];
+            endDate = new Date().toISOString().split('T')[0];
+            break;
+        case 'mes_anterior':
+            const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            startDate = lastMonth.toISOString().split('T')[0];
+            endDate = new Date(today.getFullYear(), today.getMonth(), 0).toISOString().split('T')[0];
+            break;
+        case 'ano_anterior':
+            startDate = new Date(today.getFullYear() - 1, 0, 1).toISOString().split('T')[0];
+            endDate = new Date(today.getFullYear() - 1, 11, 31).toISOString().split('T')[0];
+            break;
+    }
+    
+    document.querySelector('input[name="data_inicial"]').value = startDate;
+    document.querySelector('input[name="data_final"]').value = endDate;
+    document.getElementById('filtroForm').submit();
+}
+
+// Funções de exportação
+function exportChart(chartType) {
+    let chart;
+    switch(chartType) {
+        case 'evolucao':
+            chart = evolucaoChart;
+            break;
+        case 'distribuicao':
+            chart = distribuicaoChart;
+            break;
+    }
+    
+    const url = chart.toBase64Image();
+    const link = document.createElement('a');
+    link.download = `grafico_${chartType}.png`;
+    link.href = url;
+    link.click();
+}
+
+function exportTable(type) {
+    const params = new URLSearchParams(window.location.search);
+    params.set('export', 'excel');
+    params.set('table', type);
+    window.open(`{% url 'relatorios:financeiro' %}?${params.toString()}`, '_blank');
+}
+
+function exportFullReport(format) {
+    const params = new URLSearchParams(window.location.search);
+    params.set('export', format);
+    window.open(`{% url 'relatorios:financeiro' %}?${params.toString()}`, '_blank');
+}
+
+function printReport() {
+    window.print();
+}
+</script>
+{% endblock %}

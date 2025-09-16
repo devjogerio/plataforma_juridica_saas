@@ -1,0 +1,490 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar Perfil - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.profile-edit-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.form-section {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.form-section h5 {
+    color: #495057;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.avatar-upload {
+    position: relative;
+    display: inline-block;
+}
+
+.avatar-preview {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid #e9ecef;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.avatar-preview:hover {
+    border-color: #007bff;
+    background: #e7f3ff;
+}
+
+.avatar-upload input[type="file"] {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.form-floating {
+    margin-bottom: 1rem;
+}
+
+.btn-save {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+}
+
+.btn-save:hover {
+    background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+}
+
+.security-section {
+    border-left: 4px solid #dc3545;
+}
+
+.preferences-section {
+    border-left: 4px solid #007bff;
+}
+
+.personal-section {
+    border-left: 4px solid #28a745;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-edit-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="mb-2">
+                    <i class="fas fa-user-edit me-2"></i>Editar Perfil
+                </h1>
+                <p class="mb-0">Atualize suas informações pessoais e preferências</p>
+            </div>
+            <div class="col-auto">
+                <a href="{% url 'usuarios:perfil' %}" class="btn btn-light">
+                    <i class="fas fa-arrow-left me-1"></i>Voltar ao Perfil
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <form method="post" enctype="multipart/form-data" id="profileForm">
+        {% csrf_token %}
+        
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Informações Pessoais -->
+                <div class="form-section personal-section">
+                    <h5><i class="fas fa-user me-2"></i>Informações Pessoais</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       value="{{ form.first_name.value|default:'' }}" placeholder="Nome">
+                                <label for="first_name">Nome</label>
+                                {% if form.first_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.first_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       value="{{ form.last_name.value|default:'' }}" placeholder="Sobrenome">
+                                <label for="last_name">Sobrenome</label>
+                                {% if form.last_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.last_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-floating">
+                        <input type="email" class="form-control" id="email" name="email" 
+                               value="{{ form.email.value|default:'' }}" placeholder="E-mail">
+                        <label for="email">E-mail</label>
+                        {% if form.email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.email.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if user.oab_numero or user.is_staff %}
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="oab_numero" name="oab_numero" 
+                               value="{{ user.oab_numero|default:'' }}" placeholder="Número OAB">
+                        <label for="oab_numero">Número OAB</label>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Preferências -->
+                <div class="form-section preferences-section">
+                    <h5><i class="fas fa-cog me-2"></i>Preferências</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="tema" name="tema">
+                                    <option value="light" {% if user.preferencias.tema == 'light' %}selected{% endif %}>Claro</option>
+                                    <option value="dark" {% if user.preferencias.tema == 'dark' %}selected{% endif %}>Escuro</option>
+                                    <option value="auto" {% if user.preferencias.tema == 'auto' %}selected{% endif %}>Automático</option>
+                                </select>
+                                <label for="tema">Tema</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="idioma" name="idioma">
+                                    <option value="pt-br" {% if user.preferencias.idioma == 'pt-br' %}selected{% endif %}>Português (Brasil)</option>
+                                    <option value="en" {% if user.preferencias.idioma == 'en' %}selected{% endif %}>English</option>
+                                    <option value="es" {% if user.preferencias.idioma == 'es' %}selected{% endif %}>Español</option>
+                                </select>
+                                <label for="idioma">Idioma</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="timezone" name="timezone">
+                                    <option value="America/Sao_Paulo" {% if user.preferencias.timezone == 'America/Sao_Paulo' %}selected{% endif %}>São Paulo (GMT-3)</option>
+                                    <option value="America/Manaus" {% if user.preferencias.timezone == 'America/Manaus' %}selected{% endif %}>Manaus (GMT-4)</option>
+                                    <option value="America/Rio_Branco" {% if user.preferencias.timezone == 'America/Rio_Branco' %}selected{% endif %}>Rio Branco (GMT-5)</option>
+                                </select>
+                                <label for="timezone">Fuso Horário</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="items_por_pagina" name="items_por_pagina">
+                                    <option value="10" {% if user.preferencias.items_por_pagina == 10 %}selected{% endif %}>10 itens</option>
+                                    <option value="20" {% if user.preferencias.items_por_pagina == 20 %}selected{% endif %}>20 itens</option>
+                                    <option value="50" {% if user.preferencias.items_por_pagina == 50 %}selected{% endif %}>50 itens</option>
+                                    <option value="100" {% if user.preferencias.items_por_pagina == 100 %}selected{% endif %}>100 itens</option>
+                                </select>
+                                <label for="items_por_pagina">Itens por Página</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notificações -->
+                <div class="form-section">
+                    <h5><i class="fas fa-bell me-2"></i>Notificações</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="notif_email" name="notif_email" 
+                                       {% if user.preferencias.notificacoes_email %}checked{% endif %}>
+                                <label class="form-check-label" for="notif_email">
+                                    Notificações por E-mail
+                                </label>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="notif_prazos" name="notif_prazos" 
+                                       {% if user.preferencias.notificacoes_prazos %}checked{% endif %}>
+                                <label class="form-check-label" for="notif_prazos">
+                                    Alertas de Prazos
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="notif_sistema" name="notif_sistema" 
+                                       {% if user.preferencias.notificacoes_sistema %}checked{% endif %}>
+                                <label class="form-check-label" for="notif_sistema">
+                                    Notificações do Sistema
+                                </label>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="notif_marketing" name="notif_marketing" 
+                                       {% if user.preferencias.notificacoes_marketing %}checked{% endif %}>
+                                <label class="form-check-label" for="notif_marketing">
+                                    E-mails Promocionais
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <!-- Avatar -->
+                <div class="form-section text-center">
+                    <h5><i class="fas fa-image me-2"></i>Foto do Perfil</h5>
+                    
+                    <div class="avatar-upload mb-3">
+                        <div class="avatar-preview" id="avatarPreview">
+                            {% if user.avatar %}
+                                <img src="{{ user.avatar.url }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                            {% else %}
+                                <i class="fas fa-user"></i>
+                            {% endif %}
+                        </div>
+                        <input type="file" id="avatar" name="avatar" accept="image/*">
+                    </div>
+                    
+                    <p class="text-muted small">
+                        Clique na imagem para alterar.<br>
+                        Formatos aceitos: JPG, PNG, GIF<br>
+                        Tamanho máximo: 2MB
+                    </p>
+                </div>
+
+                <!-- Informações da Conta -->
+                <div class="form-section">
+                    <h5><i class="fas fa-info-circle me-2"></i>Informações da Conta</h5>
+                    
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Nome de Usuário</label>
+                        <p class="mb-0 fw-bold">{{ user.username }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Tipo de Usuário</label>
+                        <p class="mb-0">
+                            <span class="badge bg-{% if user.is_staff %}danger{% else %}primary{% endif %}">
+                                {{ user.get_tipo_usuario_display|default:"Usuário" }}
+                            </span>
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Membro desde</label>
+                        <p class="mb-0">{{ user.date_joined|date:"d/m/Y" }}</p>
+                    </div>
+                    
+                    <div class="mb-0">
+                        <label class="form-label text-muted">Último acesso</label>
+                        <p class="mb-0">{{ user.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</p>
+                    </div>
+                </div>
+
+                <!-- Ações -->
+                <div class="form-section">
+                    <h5><i class="fas fa-tools me-2"></i>Ações</h5>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#alterarSenhaModal">
+                            <i class="fas fa-key me-1"></i>Alterar Senha
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-download me-1"></i>Exportar Dados
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#excluirContaModal">
+                            <i class="fas fa-trash me-1"></i>Excluir Conta
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="row">
+            <div class="col-12">
+                <div class="form-section text-center">
+                    <button type="submit" class="btn btn-success btn-save me-3">
+                        <i class="fas fa-save me-1"></i>Salvar Alterações
+                    </button>
+                    <a href="{% url 'usuarios:perfil' %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Modal Alterar Senha -->
+<div class="modal fade" id="alterarSenhaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Alterar Senha</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'usuarios:alterar_senha' %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="senha_atual" class="form-label">Senha Atual</label>
+                        <input type="password" class="form-control" id="senha_atual" name="senha_atual" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="nova_senha" class="form-label">Nova Senha</label>
+                        <input type="password" class="form-control" id="nova_senha" name="nova_senha" required>
+                        <div class="form-text">A senha deve ter pelo menos 8 caracteres.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmar_senha" class="form-label">Confirmar Nova Senha</label>
+                        <input type="password" class="form-control" id="confirmar_senha" name="confirmar_senha" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Alterar Senha</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Excluir Conta -->
+<div class="modal fade" id="excluirContaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Excluir Conta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Atenção!</strong> Esta ação é irreversível.
+                </div>
+                <p>Ao excluir sua conta, todos os seus dados serão permanentemente removidos, incluindo:</p>
+                <ul>
+                    <li>Processos e andamentos</li>
+                    <li>Clientes e contatos</li>
+                    <li>Documentos e arquivos</li>
+                    <li>Relatórios e configurações</li>
+                </ul>
+                <p class="mb-0">Digite <strong>EXCLUIR</strong> para confirmar:</p>
+                <input type="text" class="form-control mt-2" id="confirmarExclusao" placeholder="Digite EXCLUIR">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnExcluirConta" disabled>
+                    <i class="fas fa-trash me-1"></i>Excluir Conta
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Preview do avatar
+    const avatarInput = document.getElementById('avatar');
+    const avatarPreview = document.getElementById('avatarPreview');
+    
+    if (avatarInput) {
+        avatarInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Validação do formulário de alteração de senha
+    const senhaForm = document.querySelector('#alterarSenhaModal form');
+    if (senhaForm) {
+        senhaForm.addEventListener('submit', function(e) {
+            const novaSenha = document.getElementById('nova_senha').value;
+            const confirmarSenha = document.getElementById('confirmar_senha').value;
+            
+            if (novaSenha !== confirmarSenha) {
+                e.preventDefault();
+                alert('As senhas não coincidem!');
+                return false;
+            }
+            
+            if (novaSenha.length < 8) {
+                e.preventDefault();
+                alert('A senha deve ter pelo menos 8 caracteres!');
+                return false;
+            }
+        });
+    }
+    
+    // Confirmação de exclusão de conta
+    const confirmarExclusao = document.getElementById('confirmarExclusao');
+    const btnExcluirConta = document.getElementById('btnExcluirConta');
+    
+    if (confirmarExclusao && btnExcluirConta) {
+        confirmarExclusao.addEventListener('input', function() {
+            btnExcluirConta.disabled = this.value !== 'EXCLUIR';
+        });
+        
+        btnExcluirConta.addEventListener('click', function() {
+            if (confirm('Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.')) {
+                // Aqui você implementaria a lógica de exclusão
+                alert('Funcionalidade de exclusão de conta será implementada.');
+            }
+        });
+    }
+    
+    // Validação do formulário principal
+    const profileForm = document.getElementById('profileForm');
+    if (profileForm) {
+        profileForm.addEventListener('submit', function(e) {
+            const email = document.getElementById('email').value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if (!emailRegex.test(email)) {
+                e.preventDefault();
+                alert('Por favor, insira um e-mail válido.');
+                return false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

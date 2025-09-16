@@ -1,0 +1,511 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ documento.nome }} - Documentos - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Detalhes do Documento{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'documentos:lista' %}">Documentos</a></li>
+<li class="breadcrumb-item active">{{ documento.nome|truncatechars:30 }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Informações Principais -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <div class="file-icon me-2 d-inline-block">
+                            {% if documento.arquivo.name|slice:"-4:" == '.pdf' %}
+                                <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 1.5rem;"></i>
+                            {% elif documento.arquivo.name|slice:"-5:" == '.docx' or documento.arquivo.name|slice:"-4:" == '.doc' %}
+                                <i class="bi bi-file-earmark-word text-primary" style="font-size: 1.5rem;"></i>
+                            {% elif documento.arquivo.name|slice:"-5:" == '.xlsx' or documento.arquivo.name|slice:"-4:" == '.xls' %}
+                                <i class="bi bi-file-earmark-excel text-success" style="font-size: 1.5rem;"></i>
+                            {% else %}
+                                <i class="bi bi-file-earmark text-secondary" style="font-size: 1.5rem;"></i>
+                            {% endif %}
+                        </div>
+                        {{ documento.nome }}
+                    </h5>
+                    <div class="btn-group">
+                        <a href="{% url 'documentos:download' documento.pk %}" class="btn btn-success">
+                            <i class="bi bi-download me-2"></i>Download
+                        </a>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#novaVersaoModal">
+                            <i class="bi bi-upload me-2"></i>Nova Versão
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" onclick="confirmarExclusao()">
+                            <i class="bi bi-trash me-2"></i>Excluir
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-4">Tipo:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge bg-secondary">{{ documento.get_tipo_display }}</span>
+                            </dd>
+                            
+                            <dt class="col-sm-4">Tamanho:</dt>
+                            <dd class="col-sm-8">{{ documento.arquivo.size|filesizeformat }}</dd>
+                            
+                            <dt class="col-sm-4">Versão:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge bg-info">v{{ documento.versao }}</span>
+                                {% if documento.versoes.count > 1 %}
+                                    <small class="text-muted ms-2">({{ documento.versoes.count }} versões)</small>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-sm-4">Status:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge bg-{% if documento.ativo %}success{% else %}secondary{% endif %}">
+                                    {% if documento.ativo %}Ativo{% else %}Inativo{% endif %}
+                                </span>
+                                {% if documento.confidencial %}
+                                    <span class="badge bg-warning text-dark ms-1">
+                                        <i class="bi bi-lock me-1"></i>Confidencial
+                                    </span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-4">Upload:</dt>
+                            <dd class="col-sm-8">
+                                {{ documento.data_upload|date:"d/m/Y H:i" }}
+                                <br>
+                                <small class="text-muted">{{ documento.usuario_upload.get_full_name|default:documento.usuario_upload.username }}</small>
+                            </dd>
+                            
+                            <dt class="col-sm-4">Processo:</dt>
+                            <dd class="col-sm-8">
+                                {% if documento.processo %}
+                                    <a href="{% url 'processos:detalhe' documento.processo.pk %}" class="text-decoration-none">
+                                        {{ documento.processo.numero_processo }}
+                                    </a>
+                                    <br>
+                                    <small class="text-muted">{{ documento.processo.cliente.nome_razao_social }}</small>
+                                {% else %}
+                                    <span class="text-muted">Não vinculado</span>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-sm-4">Hash:</dt>
+                            <dd class="col-sm-8">
+                                <code class="small">{{ documento.hash_arquivo|default:"N/A" }}</code>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+                
+                {% if documento.descricao %}
+                <hr>
+                <h6>Descrição:</h6>
+                <p class="text-muted">{{ documento.descricao }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Preview do Documento -->
+        {% if documento.arquivo.name|slice:"-4:" == '.pdf' %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-eye me-2"></i>
+                    Preview do Documento
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="pdf-viewer" style="height: 600px;">
+                    <iframe src="{{ documento.arquivo.url }}" width="100%" height="100%" style="border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Histórico de Versões -->
+        {% if documento.versoes.count > 1 %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Histórico de Versões ({{ documento.versoes.count }})
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Versão</th>
+                                <th>Data</th>
+                                <th>Usuário</th>
+                                <th>Tamanho</th>
+                                <th>Observações</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for versao in documento.versoes.all %}
+                            <tr {% if versao.pk == documento.pk %}class="table-primary"{% endif %}>
+                                <td>
+                                    <span class="badge bg-{% if versao.pk == documento.pk %}primary{% else %}secondary{% endif %}">
+                                        v{{ versao.versao }}
+                                    </span>
+                                    {% if versao.pk == documento.pk %}
+                                        <small class="text-primary ms-1">(atual)</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ versao.data_upload|date:"d/m/Y H:i" }}</td>
+                                <td>{{ versao.usuario_upload.get_full_name|default:versao.usuario_upload.username }}</td>
+                                <td>{{ versao.arquivo.size|filesizeformat }}</td>
+                                <td>{{ versao.observacoes_versao|default:"-" }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'documentos:download' versao.pk %}" 
+                                           class="btn btn-outline-success" 
+                                           title="Download">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                        {% if versao.pk != documento.pk %}
+                                            <button class="btn btn-outline-primary" 
+                                                    onclick="restaurarVersao({{ versao.pk }}, {{ versao.versao }})"
+                                                    title="Restaurar Versão">
+                                                <i class="bi bi-arrow-clockwise"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Informações Técnicas -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Informações Técnicas
+                </h6>
+            </div>
+            <div class="card-body">
+                <dl class="row small">
+                    <dt class="col-6">Nome do Arquivo:</dt>
+                    <dd class="col-6">{{ documento.arquivo.name|slice:"10:" }}</dd>
+                    
+                    <dt class="col-6">Extensão:</dt>
+                    <dd class="col-6">{{ documento.arquivo.name|slice:"-4:" }}</dd>
+                    
+                    <dt class="col-6">MIME Type:</dt>
+                    <dd class="col-6">{{ documento.mime_type|default:"N/A" }}</dd>
+                    
+                    <dt class="col-6">Criado em:</dt>
+                    <dd class="col-6">{{ documento.created_at|date:"d/m/Y H:i" }}</dd>
+                    
+                    <dt class="col-6">Atualizado em:</dt>
+                    <dd class="col-6">{{ documento.updated_at|date:"d/m/Y H:i" }}</dd>
+                    
+                    <dt class="col-6">Downloads:</dt>
+                    <dd class="col-6">{{ documento.downloads|default:0 }}</dd>
+                </dl>
+            </div>
+        </div>
+        
+        <!-- Documentos Relacionados -->
+        {% if documentos_relacionados %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-link me-2"></i>
+                    Documentos Relacionados
+                </h6>
+            </div>
+            <div class="card-body">
+                {% for doc in documentos_relacionados %}
+                <div class="d-flex align-items-center mb-2">
+                    <div class="file-icon me-2">
+                        {% if doc.arquivo.name|slice:"-4:" == '.pdf' %}
+                            <i class="bi bi-file-earmark-pdf text-danger"></i>
+                        {% elif doc.arquivo.name|slice:"-5:" == '.docx' or doc.arquivo.name|slice:"-4:" == '.doc' %}
+                            <i class="bi bi-file-earmark-word text-primary"></i>
+                        {% else %}
+                            <i class="bi bi-file-earmark text-secondary"></i>
+                        {% endif %}
+                    </div>
+                    <div class="flex-grow-1">
+                        <a href="{% url 'documentos:detalhe' doc.pk %}" class="text-decoration-none">
+                            <small><strong>{{ doc.nome|truncatechars:25 }}</strong></small>
+                        </a>
+                        <br>
+                        <small class="text-muted">{{ doc.get_tipo_display }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Ações Rápidas -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightning me-2"></i>
+                    Ações Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'documentos:download' documento.pk %}" class="btn btn-success btn-sm">
+                        <i class="bi bi-download me-2"></i>Download
+                    </a>
+                    
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#novaVersaoModal">
+                        <i class="bi bi-upload me-2"></i>Nova Versão
+                    </button>
+                    
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editarModal">
+                        <i class="bi bi-pencil me-2"></i>Editar Informações
+                    </button>
+                    
+                    <button type="button" class="btn btn-outline-info btn-sm" onclick="copiarLink()">
+                        <i class="bi bi-link me-2"></i>Copiar Link
+                    </button>
+                    
+                    {% if documento.processo %}
+                        <a href="{% url 'processos:documentos' documento.processo.pk %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-folder me-2"></i>Ver Todos do Processo
+                        </a>
+                    {% endif %}
+                    
+                    <hr>
+                    
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmarExclusao()">
+                        <i class="bi bi-trash me-2"></i>Excluir Documento
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nova Versão -->
+<div class="modal fade" id="novaVersaoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-upload me-2"></i>
+                    Nova Versão do Documento
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" enctype="multipart/form-data" action="{% url 'documentos:nova_versao' documento.pk %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Documento atual:</strong> {{ documento.nome }} (v{{ documento.versao }})
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Novo Arquivo <span class="text-danger">*</span></label>
+                        <input type="file" name="arquivo" class="form-control" required>
+                        <div class="form-text">Formatos aceitos: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Observações da Versão</label>
+                        <textarea name="observacoes_versao" class="form-control" rows="3" placeholder="Descreva as alterações desta versão..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload me-2"></i>Enviar Nova Versão
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar -->
+<div class="modal fade" id="editarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil me-2"></i>
+                    Editar Informações
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'documentos:editar' documento.pk %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nome do Documento <span class="text-danger">*</span></label>
+                        <input type="text" name="nome" class="form-control" value="{{ documento.nome }}" required>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo</label>
+                            <select name="tipo" class="form-select">
+                                <option value="peticao" {% if documento.tipo == 'peticao' %}selected{% endif %}>Petição</option>
+                                <option value="contrato" {% if documento.tipo == 'contrato' %}selected{% endif %}>Contrato</option>
+                                <option value="procuracao" {% if documento.tipo == 'procuracao' %}selected{% endif %}>Procuração</option>
+                                <option value="certidao" {% if documento.tipo == 'certidao' %}selected{% endif %}>Certidão</option>
+                                <option value="outros" {% if documento.tipo == 'outros' %}selected{% endif %}>Outros</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Processo</label>
+                            <select name="processo" class="form-select">
+                                <option value="">Nenhum</option>
+                                {% for processo in processos %}
+                                    <option value="{{ processo.pk }}" {% if documento.processo.pk == processo.pk %}selected{% endif %}>
+                                        {{ processo.numero_processo }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <textarea name="descricao" class="form-control" rows="3">{{ documento.descricao }}</textarea>
+                    </div>
+                    
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="confidencial" id="confidencial-edit" {% if documento.confidencial %}checked{% endif %}>
+                        <label class="form-check-label" for="confidencial-edit">
+                            Documento confidencial
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-2"></i>Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Confirmar exclusão
+function confirmarExclusao() {
+    if (confirm('Tem certeza que deseja excluir este documento? Esta ação não pode ser desfeita.')) {
+        window.location.href = '{% url "documentos:excluir" documento.pk %}';
+    }
+}
+
+// Restaurar versão
+function restaurarVersao(versaoId, numeroVersao) {
+    // Verificar se o usuário está autenticado
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        alert('Sessão expirada. Faça login novamente.');
+        window.location.href = '/login/';
+        return;
+    }
+    
+    if (confirm(`Tem certeza que deseja restaurar a versão ${numeroVersao}? Isso criará uma nova versão baseada na selecionada.`)) {
+        // Implementar lógica de restauração
+        fetch(`/documentos/{{ documento.pk }}/restaurar-versao/${versaoId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao restaurar versão: ' + (data.error || 'Erro desconhecido'));
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            if (error.message.includes('401') || error.message.includes('403')) {
+                alert('Sessão expirada. Faça login novamente.');
+                window.location.href = '/login/';
+            } else {
+                alert('Erro ao restaurar versão.');
+            }
+        });
+    }
+}
+
+// Copiar link
+function copiarLink() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+        // Mostrar feedback
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check me-2"></i>Copiado!';
+        btn.classList.remove('btn-outline-info');
+        btn.classList.add('btn-success');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-info');
+        }, 2000);
+    });
+}
+
+// Validação de upload
+document.querySelector('#novaVersaoModal form').addEventListener('submit', function(e) {
+    const arquivo = this.querySelector('input[type="file"]').files[0];
+    
+    if (arquivo) {
+        // Verificar tamanho (máximo 50MB)
+        if (arquivo.size > 50 * 1024 * 1024) {
+            e.preventDefault();
+            alert('O arquivo é muito grande. Tamanho máximo: 50MB');
+            return;
+        }
+        
+        // Verificar extensão
+        const extensoesPermitidas = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.jpg', '.jpeg', '.png'];
+        const extensao = arquivo.name.toLowerCase().substring(arquivo.name.lastIndexOf('.'));
+        
+        if (!extensoesPermitidas.includes(extensao)) {
+            e.preventDefault();
+            alert('Formato de arquivo não permitido.');
+            return;
+        }
+    }
+});
+</script>
+{% endblock %}

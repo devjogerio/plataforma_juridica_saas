@@ -1,0 +1,461 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Clientes - Plataforma Jurídica{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .client-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    
+    .client-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    .badge-pessoa-fisica {
+        background-color: #10b981;
+    }
+    
+    .badge-pessoa-juridica {
+        background-color: #3b82f6;
+    }
+    
+    .search-box {
+        border-radius: 25px;
+        border: 2px solid #e5e7eb;
+        padding: 0.75rem 1.5rem;
+        transition: border-color 0.3s ease;
+    }
+    
+    .search-box:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .filter-section {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Filtros e Busca -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Buscar</label>
+                <input type="text" name="q" class="form-control" value="{{ request.GET.q }}" placeholder="Nome, CPF/CNPJ, E-mail">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Tipo</label>
+                <select name="tipo_pessoa" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="PF" {% if request.GET.tipo_pessoa == 'PF' %}selected{% endif %}>Pessoa Física</option>
+                    <option value="PJ" {% if request.GET.tipo_pessoa == 'PJ' %}selected{% endif %}>Pessoa Jurídica</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Estado</label>
+                <select name="uf" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="SP" {% if request.GET.uf == 'SP' %}selected{% endif %}>São Paulo</option>
+                    <option value="RJ" {% if request.GET.uf == 'RJ' %}selected{% endif %}>Rio de Janeiro</option>
+                    <option value="MG" {% if request.GET.uf == 'MG' %}selected{% endif %}>Minas Gerais</option>
+                    <option value="RS" {% if request.GET.uf == 'RS' %}selected{% endif %}>Rio Grande do Sul</option>
+                    <option value="PR" {% if request.GET.uf == 'PR' %}selected{% endif %}>Paraná</option>
+                    <option value="SC" {% if request.GET.uf == 'SC' %}selected{% endif %}>Santa Catarina</option>
+                    <option value="BA" {% if request.GET.uf == 'BA' %}selected{% endif %}>Bahia</option>
+                    <option value="GO" {% if request.GET.uf == 'GO' %}selected{% endif %}>Goiás</option>
+                    <option value="PE" {% if request.GET.uf == 'PE' %}selected{% endif %}>Pernambuco</option>
+                    <option value="CE" {% if request.GET.uf == 'CE' %}selected{% endif %}>Ceará</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select name="ativo" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="true" {% if request.GET.ativo == 'true' %}selected{% endif %}>Ativo</option>
+                    <option value="false" {% if request.GET.ativo == 'false' %}selected{% endif %}>Inativo</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-search me-1"></i>Filtrar
+                </button>
+                <a href="{% url 'clientes:lista' %}" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-x-circle me-1"></i>Limpar
+                </a>
+                <a href="{% url 'clientes:cadastrar' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>Novo Cliente
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="text-primary mb-1">{{ total_clientes }}</h4>
+                        <p class="text-muted mb-0 small">Total</p>
+                    </div>
+                    <i class="bi bi-people text-primary" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="text-success mb-1">{{ clientes_ativos }}</h4>
+                        <p class="text-muted mb-0 small">Ativos</p>
+                    </div>
+                    <i class="bi bi-person-check text-success" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="text-info mb-1">{{ clientes_pf }}</h4>
+                        <p class="text-muted mb-0 small">Pessoa Física</p>
+                    </div>
+                    <i class="bi bi-person text-info" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="text-warning mb-1">{{ clientes_pj }}</h4>
+                        <p class="text-muted mb-0 small">Pessoa Jurídica</p>
+                    </div>
+                    <i class="bi bi-building text-warning" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Clientes -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i class="bi bi-people me-2"></i>
+                Clientes ({{ clientes.paginator.count }})
+            </h6>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" onclick="toggleView('grid')" id="btn-grid">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                </button>
+                <button class="btn btn-outline-secondary active" onclick="toggleView('list')" id="btn-list">
+                    <i class="bi bi-list"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if clientes %}
+            <!-- Visualização em Lista -->
+            <div id="list-view">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>CPF/CNPJ</th>
+                                <th>Contato</th>
+                                <th>Localização</th>
+                                <th>Processos</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cliente in clientes %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar me-2">
+                                            {% if cliente.tipo_pessoa == 'PF' %}
+                                                <i class="bi bi-person-circle text-primary" style="font-size: 2rem;"></i>
+                                            {% else %}
+                                                <i class="bi bi-building text-warning" style="font-size: 2rem;"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <strong>{{ cliente.nome_razao_social }}</strong>
+                                            {% if cliente.nome_fantasia %}
+                                                <br><small class="text-muted">{{ cliente.nome_fantasia }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if cliente.tipo_pessoa == 'PF' %}info{% else %}warning{% endif %}">
+                                        {{ cliente.get_tipo_pessoa_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <code class="small">{{ cliente.cpf_cnpj|default:"-" }}</code>
+                                </td>
+                                <td>
+                                    {% if cliente.email %}
+                                        <div><i class="bi bi-envelope me-1"></i>{{ cliente.email }}</div>
+                                    {% endif %}
+                                    {% if cliente.telefone %}
+                                        <div><i class="bi bi-telephone me-1"></i>{{ cliente.telefone }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if cliente.cidade and cliente.uf %}
+                                        {{ cliente.cidade }}/{{ cliente.uf }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="text-center">
+                                        <span class="badge bg-primary">{{ cliente.total_processos|default:0 }}</span>
+                                        {% if cliente.processos_ativos > 0 %}
+                                            <br><small class="text-success">{{ cliente.processos_ativos }} ativos</small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if cliente.ativo %}success{% else %}secondary{% endif %}">
+                                        {% if cliente.ativo %}Ativo{% else %}Inativo{% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'clientes:detalhe' cliente.pk %}" 
+                                           class="btn btn-outline-primary" 
+                                           title="Ver Detalhes">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'clientes:editar' cliente.pk %}" 
+                                           class="btn btn-outline-secondary" 
+                                           title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button class="btn btn-outline-danger" 
+                                                onclick="confirmarExclusao({{ cliente.pk }}, '{{ cliente.nome_razao_social|escapejs }}')"
+                                                title="Excluir">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Visualização em Grid -->
+            <div id="grid-view" style="display: none;">
+                <div class="row g-3 p-3">
+                    {% for cliente in clientes %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 cliente-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-start mb-3">
+                                    <div class="avatar me-3">
+                                        {% if cliente.tipo_pessoa == 'PF' %}
+                                            <i class="bi bi-person-circle text-primary" style="font-size: 3rem;"></i>
+                                        {% else %}
+                                            <i class="bi bi-building text-warning" style="font-size: 3rem;"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="card-title mb-1">{{ cliente.nome_razao_social|truncatechars:25 }}</h6>
+                                        {% if cliente.nome_fantasia %}
+                                            <p class="text-muted small mb-1">{{ cliente.nome_fantasia|truncatechars:20 }}</p>
+                                        {% endif %}
+                                        <span class="badge bg-{% if cliente.tipo_pessoa == 'PF' %}info{% else %}warning{% endif %} mb-2">
+                                            {{ cliente.get_tipo_pessoa_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    {% if cliente.cpf_cnpj %}
+                                        <small class="text-muted d-block">
+                                            <i class="bi bi-card-text me-1"></i>{{ cliente.cpf_cnpj }}
+                                        </small>
+                                    {% endif %}
+                                    {% if cliente.email %}
+                                        <small class="text-muted d-block">
+                                            <i class="bi bi-envelope me-1"></i>{{ cliente.email|truncatechars:25 }}
+                                        </small>
+                                    {% endif %}
+                                    {% if cliente.telefone %}
+                                        <small class="text-muted d-block">
+                                            <i class="bi bi-telephone me-1"></i>{{ cliente.telefone }}
+                                        </small>
+                                    {% endif %}
+                                    {% if cliente.cidade and cliente.uf %}
+                                        <small class="text-muted d-block">
+                                            <i class="bi bi-geo-alt me-1"></i>{{ cliente.cidade }}/{{ cliente.uf }}
+                                        </small>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <span class="badge bg-primary">{{ cliente.total_processos|default:0 }} processos</span>
+                                        {% if cliente.processos_ativos > 0 %}
+                                            <br><small class="text-success">{{ cliente.processos_ativos }} ativos</small>
+                                        {% endif %}
+                                    </div>
+                                    <span class="badge bg-{% if cliente.ativo %}success{% else %}secondary{% endif %}">
+                                        {% if cliente.ativo %}Ativo{% else %}Inativo{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <div class="btn-group w-100" role="group">
+                                    <a href="{% url 'clientes:detalhe' cliente.pk %}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'clientes:editar' cliente.pk %}" 
+                                       class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button class="btn btn-outline-danger btn-sm" 
+                                            onclick="confirmarExclusao({{ cliente.pk }}, '{{ cliente.nome_razao_social|escapejs }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-people text-muted" style="font-size: 4rem;"></i>
+                <h5 class="text-muted mt-3">Nenhum cliente encontrado</h5>
+                <p class="text-muted">Cadastre o primeiro cliente para começar.</p>
+                <a href="{% url 'clientes:cadastrar' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Cadastrar Cliente
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Paginação -->
+    {% if clientes.has_other_pages %}
+    <div class="card-footer">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                {% if clientes.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ clientes.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.tipo_pessoa %}&tipo_pessoa={{ request.GET.tipo_pessoa }}{% endif %}{% if request.GET.uf %}&uf={{ request.GET.uf }}{% endif %}{% if request.GET.ativo %}&ativo={{ request.GET.ativo }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                {% for num in clientes.paginator.page_range %}
+                    {% if clientes.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > clientes.number|add:'-3' and num < clientes.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.tipo_pessoa %}&tipo_pessoa={{ request.GET.tipo_pessoa }}{% endif %}{% if request.GET.uf %}&uf={{ request.GET.uf }}{% endif %}{% if request.GET.ativo %}&ativo={{ request.GET.ativo }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if clientes.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ clientes.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.tipo_pessoa %}&tipo_pessoa={{ request.GET.tipo_pessoa }}{% endif %}{% if request.GET.uf %}&uf={{ request.GET.uf }}{% endif %}{% if request.GET.ativo %}&ativo={{ request.GET.ativo }}{% endif %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Alternar visualização
+function toggleView(view) {
+    const listView = document.getElementById('list-view');
+    const gridView = document.getElementById('grid-view');
+    const btnList = document.getElementById('btn-list');
+    const btnGrid = document.getElementById('btn-grid');
+    
+    if (view === 'grid') {
+        listView.style.display = 'none';
+        gridView.style.display = 'block';
+        btnList.classList.remove('active');
+        btnGrid.classList.add('active');
+        localStorage.setItem('clientes_view', 'grid');
+    } else {
+        listView.style.display = 'block';
+        gridView.style.display = 'none';
+        btnGrid.classList.remove('active');
+        btnList.classList.add('active');
+        localStorage.setItem('clientes_view', 'list');
+    }
+}
+
+// Confirmar exclusão
+function confirmarExclusao(id, nome) {
+    if (confirm(`Tem certeza que deseja excluir o cliente "${nome}"?`)) {
+        window.location.href = `/clientes/${id}/excluir/`;
+    }
+}
+
+// Restaurar visualização salva
+document.addEventListener('DOMContentLoaded', function() {
+    const savedView = localStorage.getItem('clientes_view');
+    if (savedView === 'grid') {
+        toggleView('grid');
+    }
+});
+</script>
+{% endblock %}

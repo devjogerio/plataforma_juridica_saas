@@ -1,0 +1,584 @@
+{% extends 'base.html' %}
+
+{% block title %}Documentos - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Gestão de Documentos{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item active">Documentos</li>
+{% endblock %}
+
+{% block content %}
+<!-- Filtros e Busca -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Buscar</label>
+                <input type="text" name="q" class="form-control" value="{{ request.GET.q }}" placeholder="Nome do documento">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Tipo</label>
+                <select name="tipo" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="peticao" {% if request.GET.tipo == 'peticao' %}selected{% endif %}>Petição</option>
+                    <option value="contrato" {% if request.GET.tipo == 'contrato' %}selected{% endif %}>Contrato</option>
+                    <option value="procuracao" {% if request.GET.tipo == 'procuracao' %}selected{% endif %}>Procuração</option>
+                    <option value="certidao" {% if request.GET.tipo == 'certidao' %}selected{% endif %}>Certidão</option>
+                    <option value="outros" {% if request.GET.tipo == 'outros' %}selected{% endif %}>Outros</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Processo</label>
+                <select name="processo" class="form-select">
+                    <option value="">Todos</option>
+                    {% for processo in processos %}
+                        <option value="{{ processo.pk }}" {% if request.GET.processo == processo.pk|stringformat:'s' %}selected{% endif %}>
+                            {{ processo.numero_processo }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Data Upload</label>
+                <input type="date" name="data_upload" class="form-control" value="{{ request.GET.data_upload }}">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-search me-1"></i>Filtrar
+                </button>
+                <a href="{% url 'documentos:lista' %}" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-x-circle me-1"></i>Limpar
+                </a>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="bi bi-cloud-upload me-1"></i>Upload
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="text-primary mb-1">{{ total_documentos }}</h4>
+                        <p class="text-muted mb-0 small">Total</p>
+                    </div>
+                    <i class="bi bi-file-earmark text-primary" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="text-success mb-1">{{ documentos_mes }}</h4>
+                        <p class="text-muted mb-0 small">Este Mês</p>
+                    </div>
+                    <i class="bi bi-calendar-plus text-success" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="text-info mb-1">{{ tamanho_total|filesizeformat }}</h4>
+                        <p class="text-muted mb-0 small">Espaço Usado</p>
+                    </div>
+                    <i class="bi bi-hdd text-info" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="text-warning mb-1">{{ tipos_count }}</h4>
+                        <p class="text-muted mb-0 small">Tipos</p>
+                    </div>
+                    <i class="bi bi-tags text-warning" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Documentos -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i class="bi bi-folder me-2"></i>
+                Documentos ({{ documentos.paginator.count }})
+            </h6>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" onclick="toggleView('grid')" id="btn-grid">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                </button>
+                <button class="btn btn-outline-secondary active" onclick="toggleView('list')" id="btn-list">
+                    <i class="bi bi-list"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if documentos %}
+            <!-- Visualização em Lista -->
+            <div id="list-view">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="40">
+                                    <input type="checkbox" id="select-all" class="form-check-input">
+                                </th>
+                                <th>Documento</th>
+                                <th>Tipo</th>
+                                <th>Processo</th>
+                                <th>Tamanho</th>
+                                <th>Upload</th>
+                                <th>Versão</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for documento in documentos %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="form-check-input doc-checkbox" value="{{ documento.pk }}">
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="file-icon me-2">
+                                            {% if documento.arquivo.name|slice:"-4:" == '.pdf' %}
+                                                <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 1.5rem;"></i>
+                                            {% elif documento.arquivo.name|slice:"-5:" == '.docx' or documento.arquivo.name|slice:"-4:" == '.doc' %}
+                                                <i class="bi bi-file-earmark-word text-primary" style="font-size: 1.5rem;"></i>
+                                            {% elif documento.arquivo.name|slice:"-5:" == '.xlsx' or documento.arquivo.name|slice:"-4:" == '.xls' %}
+                                                <i class="bi bi-file-earmark-excel text-success" style="font-size: 1.5rem;"></i>
+                                            {% else %}
+                                                <i class="bi bi-file-earmark text-secondary" style="font-size: 1.5rem;"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <strong>{{ documento.nome }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ documento.descricao|truncatechars:50 }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ documento.get_tipo_display }}</span>
+                                </td>
+                                <td>
+                                    {% if documento.processo %}
+                                        <a href="{% url 'processos:detalhe' documento.processo.pk %}" class="text-decoration-none">
+                                            {{ documento.processo.numero_processo }}
+                                        </a>
+                                        <br>
+                                        <small class="text-muted">{{ documento.processo.cliente.nome_razao_social|truncatechars:25 }}</small>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ documento.arquivo.size|filesizeformat }}</td>
+                                <td>
+                                    {{ documento.data_upload|date:"d/m/Y H:i" }}
+                                    <br>
+                                    <small class="text-muted">{{ documento.usuario_upload.get_full_name|default:documento.usuario_upload.username }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">v{{ documento.versao }}</span>
+                                    {% if documento.versoes.count > 1 %}
+                                        <br>
+                                        <small class="text-muted">{{ documento.versoes.count }} versões</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'documentos:detalhe' documento.pk %}" 
+                                           class="btn btn-outline-primary" 
+                                           title="Ver Detalhes">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'documentos:download' documento.pk %}" 
+                                           class="btn btn-outline-success" 
+                                           title="Download">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                        <button class="btn btn-outline-danger" 
+                                                onclick="confirmarExclusao({{ documento.pk }}, '{{ documento.nome|escapejs }}')"
+                                                title="Excluir">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Visualização em Grid -->
+            <div id="grid-view" style="display: none;">
+                <div class="row g-3 p-3">
+                    {% for documento in documentos %}
+                    <div class="col-md-4 col-lg-3">
+                        <div class="card h-100 document-card">
+                            <div class="card-body text-center">
+                                <div class="file-icon mb-2">
+                                    {% if documento.arquivo.name|slice:"-4:" == '.pdf' %}
+                                        <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 3rem;"></i>
+                                    {% elif documento.arquivo.name|slice:"-5:" == '.docx' or documento.arquivo.name|slice:"-4:" == '.doc' %}
+                                        <i class="bi bi-file-earmark-word text-primary" style="font-size: 3rem;"></i>
+                                    {% elif documento.arquivo.name|slice:"-5:" == '.xlsx' or documento.arquivo.name|slice:"-4:" == '.xls' %}
+                                        <i class="bi bi-file-earmark-excel text-success" style="font-size: 3rem;"></i>
+                                    {% else %}
+                                        <i class="bi bi-file-earmark text-secondary" style="font-size: 3rem;"></i>
+                                    {% endif %}
+                                </div>
+                                <h6 class="card-title">{{ documento.nome|truncatechars:20 }}</h6>
+                                <p class="card-text small text-muted">{{ documento.descricao|truncatechars:40 }}</p>
+                                <div class="mb-2">
+                                    <span class="badge bg-secondary">{{ documento.get_tipo_display }}</span>
+                                    <span class="badge bg-info">v{{ documento.versao }}</span>
+                                </div>
+                                <small class="text-muted d-block">{{ documento.arquivo.size|filesizeformat }}</small>
+                                <small class="text-muted d-block">{{ documento.data_upload|date:"d/m/Y" }}</small>
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <div class="btn-group w-100" role="group">
+                                    <a href="{% url 'documentos:detalhe' documento.pk %}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'documentos:download' documento.pk %}" 
+                                       class="btn btn-outline-success btn-sm">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    <button class="btn btn-outline-danger btn-sm" 
+                                            onclick="confirmarExclusao({{ documento.pk }}, '{{ documento.nome|escapejs }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-folder-x text-muted" style="font-size: 4rem;"></i>
+                <h5 class="text-muted mt-3">Nenhum documento encontrado</h5>
+                <p class="text-muted">Faça o upload do primeiro documento para começar.</p>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="bi bi-cloud-upload me-2"></i>Fazer Upload
+                </button>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Paginação -->
+    {% if documentos.has_other_pages %}
+    <div class="card-footer">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                {% if documentos.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ documentos.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.processo %}&processo={{ request.GET.processo }}{% endif %}{% if request.GET.data_upload %}&data_upload={{ request.GET.data_upload }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                {% for num in documentos.paginator.page_range %}
+                    {% if documentos.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > documentos.number|add:'-3' and num < documentos.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.processo %}&processo={{ request.GET.processo }}{% endif %}{% if request.GET.data_upload %}&data_upload={{ request.GET.data_upload }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if documentos.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ documentos.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.processo %}&processo={{ request.GET.processo }}{% endif %}{% if request.GET.data_upload %}&data_upload={{ request.GET.data_upload }}{% endif %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal de Upload -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-cloud-upload me-2"></i>
+                    Upload de Documentos
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" enctype="multipart/form-data" action="{% url 'documentos:upload' %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    
+                    <!-- Área de Drop -->
+                    <div class="upload-area mb-3" id="upload-area">
+                        <div class="text-center py-4">
+                            <i class="bi bi-cloud-upload text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="mt-2">Arraste arquivos aqui ou clique para selecionar</h5>
+                            <p class="text-muted">Formatos aceitos: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG</p>
+                            <input type="file" id="arquivo" name="arquivo" class="d-none" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png">
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de Arquivos Selecionados -->
+                    <div id="files-list"></div>
+                    
+                    <!-- Campos do Formulário -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo de Documento <span class="text-danger">*</span></label>
+                            <select name="tipo" class="form-select" required>
+                                <option value="">Selecione o tipo</option>
+                                <option value="peticao">Petição</option>
+                                <option value="contrato">Contrato</option>
+                                <option value="procuracao">Procuração</option>
+                                <option value="certidao">Certidão</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Processo (Opcional)</label>
+                            <select name="processo" class="form-select">
+                                <option value="">Selecione o processo</option>
+                                {% for processo in processos %}
+                                    <option value="{{ processo.pk }}">{{ processo.numero_processo }} - {{ processo.cliente.nome_razao_social|truncatechars:30 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <textarea name="descricao" class="form-control" rows="3" placeholder="Descrição do documento..."></textarea>
+                    </div>
+                    
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="confidencial" id="confidencial">
+                        <label class="form-check-label" for="confidencial">
+                            Documento confidencial
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btn-upload" disabled>
+                        <i class="bi bi-cloud-upload me-2"></i>Fazer Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.upload-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 0.375rem;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-area:hover {
+    border-color: #0d6efd;
+    background-color: #e3f2fd;
+}
+
+.upload-area.dragover {
+    border-color: #0d6efd;
+    background-color: #e3f2fd;
+    transform: scale(1.02);
+}
+
+.document-card {
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+.document-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.file-preview {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #f8f9fa;
+}
+
+.btn-group-sm > .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Alternar visualização
+function toggleView(view) {
+    const listView = document.getElementById('list-view');
+    const gridView = document.getElementById('grid-view');
+    const btnList = document.getElementById('btn-list');
+    const btnGrid = document.getElementById('btn-grid');
+    
+    if (view === 'grid') {
+        listView.style.display = 'none';
+        gridView.style.display = 'block';
+        btnList.classList.remove('active');
+        btnGrid.classList.add('active');
+        localStorage.setItem('documentos_view', 'grid');
+    } else {
+        listView.style.display = 'block';
+        gridView.style.display = 'none';
+        btnGrid.classList.remove('active');
+        btnList.classList.add('active');
+        localStorage.setItem('documentos_view', 'list');
+    }
+}
+
+// Selecionar todos
+document.getElementById('select-all').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.doc-checkbox');
+    checkboxes.forEach(cb => cb.checked = this.checked);
+});
+
+// Upload de arquivos
+const uploadArea = document.getElementById('upload-area');
+const fileInput = document.getElementById('arquivo');
+const filesList = document.getElementById('files-list');
+const btnUpload = document.getElementById('btn-upload');
+
+// Clique na área de upload
+uploadArea.addEventListener('click', () => fileInput.click());
+
+// Drag and drop
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    fileInput.files = e.dataTransfer.files;
+    displayFiles();
+});
+
+// Seleção de arquivos
+fileInput.addEventListener('change', displayFiles);
+
+// Exibir arquivos selecionados
+function displayFiles() {
+    const files = fileInput.files;
+    filesList.innerHTML = '';
+    
+    if (files.length > 0) {
+        btnUpload.disabled = false;
+        
+        Array.from(files).forEach((file, index) => {
+            const fileDiv = document.createElement('div');
+            fileDiv.className = 'file-preview d-flex justify-content-between align-items-center';
+            
+            fileDiv.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-file-earmark me-2"></i>
+                    <div>
+                        <strong>${file.name}</strong><br>
+                        <small class="text-muted">${formatFileSize(file.size)}</small>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile(${index})">
+                    <i class="bi bi-x"></i>
+                </button>
+            `;
+            
+            filesList.appendChild(fileDiv);
+        });
+    } else {
+        btnUpload.disabled = true;
+    }
+}
+
+// Remover arquivo
+function removeFile(index) {
+    const dt = new DataTransfer();
+    const files = fileInput.files;
+    
+    for (let i = 0; i < files.length; i++) {
+        if (i !== index) {
+            dt.items.add(files[i]);
+        }
+    }
+    
+    fileInput.files = dt.files;
+    displayFiles();
+}
+
+// Formatar tamanho do arquivo
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Confirmar exclusão
+function confirmarExclusao(id, nome) {
+    if (confirm(`Tem certeza que deseja excluir o documento "${nome}"?`)) {
+        window.location.href = `/documentos/${id}/excluir/`;
+    }
+}
+
+// Restaurar visualização salva
+document.addEventListener('DOMContentLoaded', function() {
+    const savedView = localStorage.getItem('documentos_view');
+    if (savedView === 'grid') {
+        toggleView('grid');
+    }
+});
+</script>
+{% endblock %}

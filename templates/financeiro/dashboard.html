@@ -1,0 +1,421 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load date_filters %}
+
+{% block title %}Dashboard Financeiro - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Dashboard Financeiro{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item active">Financeiro</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-stats {
+        transition: transform 0.2s ease-in-out;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .card-stats:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    .stats-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 20px 0;
+    }
+    
+    .recent-transactions {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .transaction-item {
+        border-left: 4px solid transparent;
+        transition: all 0.2s ease;
+    }
+    
+    .transaction-item:hover {
+        background-color: #f8f9fa;
+        border-left-color: #007bff;
+    }
+    
+    .transaction-item.receita {
+        border-left-color: #28a745;
+    }
+    
+    .transaction-item.despesa {
+        border-left-color: #dc3545;
+    }
+    
+    .btn-action {
+        border-radius: 20px;
+        padding: 8px 20px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .period-selector {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .quick-actions {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Filtros de Período -->
+<div class="period-selector">
+    <div class="row align-items-center">
+        <div class="col-md-6">
+            <h5 class="mb-0">Período de Análise</h5>
+        </div>
+        <div class="col-md-6">
+            <div class="btn-group float-end" role="group">
+                <button type="button" class="btn btn-outline-primary btn-sm active" data-period="mes">Este Mês</button>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-period="trimestre">Trimestre</button>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-period="ano">Este Ano</button>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-period="custom">Personalizado</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPIs Principais -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card card-stats h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="metric-value text-primary">R$ {{ total_honorarios|floatformat:2 }}</div>
+                        <div class="metric-label text-muted">Total em Honorários</div>
+                        <small class="text-success">
+                            <i class="bi bi-arrow-up"></i> +12% vs mês anterior
+                        </small>
+                    </div>
+                    <div class="stats-icon bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-currency-dollar"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card card-stats h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="metric-value text-success">R$ {{ honorarios_recebidos|floatformat:2 }}</div>
+                        <div class="metric-label text-muted">Honorários Recebidos</div>
+                        <small class="text-success">
+                            <i class="bi bi-arrow-up"></i> +8% vs mês anterior
+                        </small>
+                    </div>
+                    <div class="stats-icon bg-success bg-opacity-10 text-success">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card card-stats h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="metric-value text-warning">R$ {{ honorarios_pendentes|floatformat:2 }}</div>
+                        <div class="metric-label text-muted">Honorários Pendentes</div>
+                        <small class="text-warning">
+                            <i class="bi bi-clock"></i> {{ parcelas_vencidas }} vencidas
+                        </small>
+                    </div>
+                    <div class="stats-icon bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card card-stats h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="metric-value text-danger">R$ {{ total_despesas|floatformat:2 }}</div>
+                        <div class="metric-label text-muted">Total em Despesas</div>
+                        <small class="text-danger">
+                            <i class="bi bi-arrow-down"></i> -5% vs mês anterior
+                        </small>
+                    </div>
+                    <div class="stats-icon bg-danger bg-opacity-10 text-danger">
+                        <i class="bi bi-receipt"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resumo Financeiro -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Fluxo de Caixa</h5>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary active" data-chart="mensal">Mensal</button>
+                    <button class="btn btn-outline-secondary" data-chart="semanal">Semanal</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="fluxoCaixaChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Distribuição por Tipo</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="distribuicaoChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas e Transações Recentes -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="quick-actions">
+            <h5 class="mb-3">Ações Rápidas</h5>
+            <div class="d-grid gap-2">
+                <a href="{% url 'financeiro:criar_honorario' %}" class="btn btn-primary btn-action">
+                    <i class="bi bi-plus-circle me-2"></i>Novo Honorário
+                </a>
+                <a href="{% url 'financeiro:criar_despesa' %}" class="btn btn-outline-danger btn-action">
+                    <i class="bi bi-receipt me-2"></i>Nova Despesa
+                </a>
+                <a href="{% url 'financeiro:relatorios' %}" class="btn btn-outline-info btn-action">
+                    <i class="bi bi-graph-up me-2"></i>Relatórios
+                </a>
+                <a href="{% url 'financeiro:contas_bancarias' %}" class="btn btn-outline-secondary btn-action">
+                    <i class="bi bi-bank me-2"></i>Contas Bancárias
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Transações Recentes</h5>
+                <a href="{% url 'financeiro:honorarios' %}" class="btn btn-sm btn-outline-primary">Ver Todas</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="recent-transactions">
+                    {% for honorario in honorarios_recentes %}
+                    <div class="transaction-item receita p-3 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ honorario.processo.numero_processo }}</h6>
+                                <small class="text-muted">{{ honorario.cliente.nome_razao_social }}</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="text-success fw-bold">+R$ {{ honorario.valor_total|floatformat:2 }}</div>
+                                <small class="text-muted">{{ honorario.data_vencimento|date:"d/m/Y" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="p-3 text-center text-muted">
+                        <i class="bi bi-inbox display-4 d-block mb-2"></i>
+                        Nenhuma transação recente
+                    </div>
+                    {% endfor %}
+                    
+                    {% for despesa in despesas_recentes %}
+                    <div class="transaction-item despesa p-3 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ despesa.get_tipo_despesa_display }}</h6>
+                                <small class="text-muted">{{ despesa.descricao|truncatechars:50 }}</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="text-danger fw-bold">-R$ {{ despesa.valor|floatformat:2 }}</div>
+                                <small class="text-muted">{{ despesa.data_despesa|date:"d/m/Y" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    {% if not honorarios_recentes %}
+                    <div class="p-3 text-center text-muted">
+                        <i class="bi bi-inbox display-4 d-block mb-2"></i>
+                        Nenhuma transação recente
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alertas e Lembretes -->
+{% if parcelas_vencidas > 0 or despesas_pendentes > 0 %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <h5><i class="bi bi-exclamation-triangle me-2"></i>Atenção Necessária</h5>
+            <ul class="mb-0">
+                {% if parcelas_vencidas > 0 %}
+                <li>{{ parcelas_vencidas }} parcela{{ parcelas_vencidas|pluralize }} de honorário{{ parcelas_vencidas|pluralize }} vencida{{ parcelas_vencidas|pluralize }}</li>
+                {% endif %}
+                {% if despesas_pendentes > 0 %}
+                <li>{{ despesas_pendentes }} despesa{{ despesas_pendentes|pluralize }} pendente{{ despesas_pendentes|pluralize }} de reembolso</li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Dados dos honorários por mês
+    const honorariosPorMes = {{ honorarios_por_mes|safe }};
+    
+    // Gráfico de evolução de honorários
+    const ctxHonorarios = document.getElementById('chartHonorarios').getContext('2d');
+    new Chart(ctxHonorarios, {
+        type: 'line',
+        data: {
+            labels: honorariosPorMes.map(item => item.mes),
+            datasets: [{
+                label: 'Honorários Recebidos (R$)',
+                data: honorariosPorMes.map(item => item.valor),
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value.toLocaleString('pt-BR');
+                        }
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    radius: 4,
+                    hoverRadius: 6
+                }
+            }
+        }
+    });
+    
+    // Gráfico de status dos honorários
+    const ctxStatus = document.getElementById('chartStatusHonorarios').getContext('2d');
+    new Chart(ctxStatus, {
+        type: 'doughnut',
+        data: {
+            labels: ['Recebidos', 'Pendentes'],
+            datasets: [{
+                data: [{{ honorarios_recebidos }}, {{ honorarios_pendentes }}],
+                backgroundColor: ['#198754', '#ffc107'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            cutout: '60%'
+        }
+    });
+    
+    // Atualizar dados a cada 5 minutos
+    setInterval(function() {
+        location.reload();
+    }, 300000);
+});
+</script>
+{% endblock %}

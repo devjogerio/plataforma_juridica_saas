@@ -1,0 +1,1 @@
+# Configurações do Django para Plataforma Jurídica SaaS

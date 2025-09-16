@@ -1,0 +1,623 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% if form.instance.pk %}Editar Honorário{% else %}Novo Honorário{% endif %} - Plataforma Jurídica
+{% endblock %}
+
+{% block page_title %}
+{% if form.instance.pk %}Editar Honorário{% else %}Novo Honorário{% endif %}
+{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'financeiro:dashboard' %}">Financeiro</a></li>
+<li class="breadcrumb-item"><a href="{% url 'financeiro:honorarios' %}">Honorários</a></li>
+{% if form.instance.pk %}
+    <li class="breadcrumb-item"><a href="{% url 'financeiro:detalhe_honorario' form.instance.pk %}">{{ form.instance.processo.numero_processo }}</a></li>
+    <li class="breadcrumb-item active">Editar</li>
+{% else %}
+    <li class="breadcrumb-item active">Novo Honorário</li>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<form method="post" id="honorario-form" novalidate>
+    {% csrf_token %}
+    
+    <!-- Processo e Cliente -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0">
+                <i class="bi bi-folder me-2"></i>
+                Processo e Cliente
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Processo *</label>
+                        {{ form.processo }}
+                        {% if form.processo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.processo.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Selecione o processo para o qual o honorário será cobrado</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Cliente *</label>
+                        {{ form.cliente }}
+                        {% if form.cliente.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.cliente.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Cliente será preenchido automaticamente baseado no processo</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tipo de Cobrança -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0">
+                <i class="bi bi-calculator me-2"></i>
+                Tipo de Cobrança
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Cobrança *</label>
+                        {{ form.tipo_cobranca }}
+                        {% if form.tipo_cobranca.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.tipo_cobranca.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Campos específicos por tipo de cobrança -->
+            
+            <!-- Valor Fixo -->
+            <div class="row" id="campos-fixo" style="display: none;">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Valor Fixo *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            {{ form.valor_fixo }}
+                        </div>
+                        {% if form.valor_fixo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.valor_fixo.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Por Hora -->
+            <div class="row" id="campos-por-hora" style="display: none;">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Valor por Hora *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            {{ form.valor_hora }}
+                        </div>
+                        {% if form.valor_hora.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.valor_hora.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Horas Trabalhadas *</label>
+                        <div class="input-group">
+                            {{ form.horas_trabalhadas }}
+                            <span class="input-group-text">h</span>
+                        </div>
+                        {% if form.horas_trabalhadas.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.horas_trabalhadas.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Valor Total Calculado</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="text" class="form-control" id="valor-total-hora" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Por Êxito -->
+            <div class="row" id="campos-por-exito" style="display: none;">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Percentual de Êxito *</label>
+                        <div class="input-group">
+                            {{ form.percentual_exito }}
+                            <span class="input-group-text">%</span>
+                        </div>
+                        {% if form.percentual_exito.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.percentual_exito.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Valor do Êxito *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            {{ form.valor_exito }}
+                        </div>
+                        {% if form.valor_exito.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.valor_exito.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Valor obtido no processo para cálculo do êxito</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Valor Total Calculado</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="text" class="form-control" id="valor-total-exito" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Misto -->
+            <div class="row" id="campos-misto" style="display: none;">
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label class="form-label">Valor Fixo</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            {{ form.valor_fixo }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label class="form-label">Percentual de Êxito</label>
+                        <div class="input-group">
+                            {{ form.percentual_exito }}
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label class="form-label">Valor do Êxito</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            {{ form.valor_exito }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label class="form-label">Valor Total Calculado</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="text" class="form-control" id="valor-total-misto" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pro Bono -->
+            <div class="row" id="campos-pro-bono" style="display: none;">
+                <div class="col-12">
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Trabalho Pro Bono:</strong> Este honorário não terá valor monetário associado.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pagamento -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0">
+                <i class="bi bi-credit-card me-2"></i>
+                Condições de Pagamento
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Data de Vencimento *</label>
+                        {{ form.data_vencimento }}
+                        {% if form.data_vencimento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.data_vencimento.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Forma de Pagamento</label>
+                        {{ form.forma_pagamento }}
+                        {% if form.forma_pagamento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.forma_pagamento.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Número de Parcelas</label>
+                        {{ form.numero_parcelas }}
+                        {% if form.numero_parcelas.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.numero_parcelas.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">1 = À vista, >1 = Parcelado</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Preview das Parcelas -->
+            <div id="preview-parcelas" style="display: none;">
+                <hr>
+                <h6 class="text-muted mb-3">Preview das Parcelas</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Parcela</th>
+                                <th>Valor</th>
+                                <th>Vencimento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="parcelas-preview">
+                            <!-- Preenchido via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Observações -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0">
+                <i class="bi bi-chat-text me-2"></i>
+                Observações
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                {{ form.observacoes }}
+                {% if form.observacoes.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.observacoes.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Resumo do Honorário -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h6 class="mb-0">
+                <i class="bi bi-calculator me-2"></i>
+                Resumo do Honorário
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Tipo de Cobrança:</span>
+                        <span id="resumo-tipo" class="fw-bold">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Forma de Pagamento:</span>
+                        <span id="resumo-forma" class="fw-bold">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Número de Parcelas:</span>
+                        <span id="resumo-parcelas" class="fw-bold">-</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="text-end">
+                        <h4 class="text-primary mb-1">Valor Total</h4>
+                        <h2 class="text-primary" id="resumo-valor-total">R$ 0,00</h2>
+                        <div id="resumo-valor-parcela" class="text-muted"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botões de Ação -->
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <a href="{% if form.instance.pk %}{% url 'financeiro:detalhe_honorario' form.instance.pk %}{% else %}{% url 'financeiro:honorarios' %}{% endif %}" 
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Cancelar
+                    </a>
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-primary" id="btn-salvar">
+                        <i class="bi bi-check-circle me-1"></i>
+                        {% if form.instance.pk %}Atualizar Honorário{% else %}Cadastrar Honorário{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.invalid-feedback {
+    display: block;
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+#resumo-valor-total {
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+.card-header.bg-primary {
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoCobrancaSelect = document.querySelector('select[name="tipo_cobranca"]');
+    const processoSelect = document.querySelector('select[name="processo"]');
+    const clienteSelect = document.querySelector('select[name="cliente"]');
+    const numeroParcelasInput = document.querySelector('input[name="numero_parcelas"]');
+    const dataVencimentoInput = document.querySelector('input[name="data_vencimento"]');
+    
+    // Inicializar campos baseado no tipo selecionado
+    toggleCamposCobranca();
+    atualizarResumo();
+    
+    // Event listeners
+    tipoCobrancaSelect.addEventListener('change', function() {
+        toggleCamposCobranca();
+        calcularValorTotal();
+        atualizarResumo();
+    });
+    
+    // Sincronizar processo e cliente
+    processoSelect.addEventListener('change', function() {
+        const processoId = this.value;
+        if (processoId) {
+            // Verificar se o usuário está autenticado
+            if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+                alert('Sessão expirada. Faça login novamente.');
+                window.location.href = '/login/';
+                return;
+            }
+            
+            // Buscar cliente do processo via AJAX
+            fetch(`/api/processos/${processoId}/cliente/`, {
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 401 || response.status === 403) {
+                            throw new Error('Sessão expirada. Faça login novamente.');
+                        }
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.cliente_id) {
+                        clienteSelect.value = data.cliente_id;
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar cliente:', error);
+                    if (error.message.includes('Sessão expirada')) {
+                        alert(error.message);
+                        window.location.href = '/login/';
+                    } else {
+                        console.error('Erro ao buscar cliente:', error);
+                    }
+                });
+        }
+    });
+    
+    // Calcular valores automaticamente
+    const camposCalculo = document.querySelectorAll(
+        'input[name="valor_fixo"], input[name="valor_hora"], input[name="horas_trabalhadas"], ' +
+        'input[name="percentual_exito"], input[name="valor_exito"]'
+    );
+    
+    camposCalculo.forEach(campo => {
+        campo.addEventListener('input', function() {
+            calcularValorTotal();
+            atualizarResumo();
+        });
+    });
+    
+    // Atualizar preview das parcelas
+    numeroParcelasInput.addEventListener('input', function() {
+        atualizarPreviewParcelas();
+        atualizarResumo();
+    });
+    
+    dataVencimentoInput.addEventListener('change', function() {
+        atualizarPreviewParcelas();
+    });
+    
+    // Atualizar resumo quando forma de pagamento mudar
+    document.querySelector('select[name="forma_pagamento"]').addEventListener('change', atualizarResumo);
+    
+    function toggleCamposCobranca() {
+        const tipo = tipoCobrancaSelect.value;
+        
+        // Ocultar todos os campos específicos
+        document.getElementById('campos-fixo').style.display = 'none';
+        document.getElementById('campos-por-hora').style.display = 'none';
+        document.getElementById('campos-por-exito').style.display = 'none';
+        document.getElementById('campos-misto').style.display = 'none';
+        document.getElementById('campos-pro-bono').style.display = 'none';
+        
+        // Mostrar campos específicos do tipo selecionado
+        if (tipo === 'fixo') {
+            document.getElementById('campos-fixo').style.display = 'block';
+        } else if (tipo === 'por_hora') {
+            document.getElementById('campos-por-hora').style.display = 'block';
+        } else if (tipo === 'por_exito') {
+            document.getElementById('campos-por-exito').style.display = 'block';
+        } else if (tipo === 'misto') {
+            document.getElementById('campos-misto').style.display = 'block';
+        } else if (tipo === 'pro_bono') {
+            document.getElementById('campos-pro-bono').style.display = 'block';
+        }
+    }
+    
+    function calcularValorTotal() {
+        const tipo = tipoCobrancaSelect.value;
+        let valorTotal = 0;
+        
+        if (tipo === 'fixo') {
+            const valorFixo = parseFloat(document.querySelector('input[name="valor_fixo"]').value) || 0;
+            valorTotal = valorFixo;
+        } else if (tipo === 'por_hora') {
+            const valorHora = parseFloat(document.querySelector('input[name="valor_hora"]').value) || 0;
+            const horasTrabalhadas = parseFloat(document.querySelector('input[name="horas_trabalhadas"]').value) || 0;
+            valorTotal = valorHora * horasTrabalhadas;
+            document.getElementById('valor-total-hora').value = valorTotal.toFixed(2);
+        } else if (tipo === 'por_exito') {
+            const percentualExito = parseFloat(document.querySelector('input[name="percentual_exito"]').value) || 0;
+            const valorExito = parseFloat(document.querySelector('input[name="valor_exito"]').value) || 0;
+            valorTotal = (valorExito * percentualExito) / 100;
+            document.getElementById('valor-total-exito').value = valorTotal.toFixed(2);
+        } else if (tipo === 'misto') {
+            const valorFixo = parseFloat(document.querySelector('input[name="valor_fixo"]').value) || 0;
+            const percentualExito = parseFloat(document.querySelector('input[name="percentual_exito"]').value) || 0;
+            const valorExito = parseFloat(document.querySelector('input[name="valor_exito"]').value) || 0;
+            valorTotal = valorFixo + ((valorExito * percentualExito) / 100);
+            document.getElementById('valor-total-misto').value = valorTotal.toFixed(2);
+        } else if (tipo === 'pro_bono') {
+            valorTotal = 0;
+        }
+        
+        return valorTotal;
+    }
+    
+    function atualizarResumo() {
+        const tipo = tipoCobrancaSelect.value;
+        const forma = document.querySelector('select[name="forma_pagamento"]').value;
+        const parcelas = parseInt(numeroParcelasInput.value) || 1;
+        const valorTotal = calcularValorTotal();
+        
+        // Atualizar resumo
+        document.getElementById('resumo-tipo').textContent = 
+            tipoCobrancaSelect.options[tipoCobrancaSelect.selectedIndex]?.text || '-';
+        document.getElementById('resumo-forma').textContent = 
+            document.querySelector('select[name="forma_pagamento"]').options[document.querySelector('select[name="forma_pagamento"]').selectedIndex]?.text || '-';
+        document.getElementById('resumo-parcelas').textContent = parcelas + 'x';
+        document.getElementById('resumo-valor-total').textContent = 
+            'R$ ' + valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        
+        if (parcelas > 1) {
+            const valorParcela = valorTotal / parcelas;
+            document.getElementById('resumo-valor-parcela').textContent = 
+                `${parcelas}x de R$ ${valorParcela.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        } else {
+            document.getElementById('resumo-valor-parcela').textContent = 'À vista';
+        }
+    }
+    
+    function atualizarPreviewParcelas() {
+        const parcelas = parseInt(numeroParcelasInput.value) || 1;
+        const dataVencimento = dataVencimentoInput.value;
+        const valorTotal = calcularValorTotal();
+        
+        if (parcelas > 1 && dataVencimento && valorTotal > 0) {
+            document.getElementById('preview-parcelas').style.display = 'block';
+            
+            const tbody = document.getElementById('parcelas-preview');
+            tbody.innerHTML = '';
+            
+            const valorParcela = valorTotal / parcelas;
+            const dataBase = new Date(dataVencimento);
+            
+            for (let i = 0; i < parcelas; i++) {
+                const dataParc = new Date(dataBase);
+                dataParc.setMonth(dataParc.getMonth() + i);
+                
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = `${i + 1}/${parcelas}`;
+                row.insertCell(1).textContent = `R$ ${valorParcela.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+                row.insertCell(2).textContent = dataParc.toLocaleDateString('pt-BR');
+            }
+        } else {
+            document.getElementById('preview-parcelas').style.display = 'none';
+        }
+    }
+    
+    // Validação do formulário
+    document.getElementById('honorario-form').addEventListener('submit', function(e) {
+        const btnSalvar = document.getElementById('btn-salvar');
+        btnSalvar.disabled = true;
+        btnSalvar.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Salvando...';
+    });
+});
+
+// Função global para alternar campos (chamada pelo onchange do select)
+function toggleCamposCobranca() {
+    // Implementada dentro do DOMContentLoaded
+}
+</script>
+{% endblock %}

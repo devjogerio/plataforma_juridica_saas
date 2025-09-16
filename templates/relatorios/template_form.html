@@ -1,0 +1,549 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if object %}Editar Template{% else %}Novo Template{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .section-title {
+        color: #5a5c69;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e3e6f0;
+    }
+    
+    .field-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .field-group label {
+        font-weight: 600;
+        color: #5a5c69;
+        margin-bottom: 0.5rem;
+    }
+    
+    .field-help {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    
+    .campos-container {
+        border: 1px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 1rem;
+        background: #f8f9fc;
+    }
+    
+    .campo-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        background: white;
+        border-radius: 5px;
+        border: 1px solid #e3e6f0;
+    }
+    
+    .campo-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .campo-item input[type="checkbox"] {
+        margin-right: 0.75rem;
+    }
+    
+    .campo-item label {
+        margin-bottom: 0;
+        font-weight: normal;
+        flex-grow: 1;
+    }
+    
+    .preview-container {
+        background: #f8f9fc;
+        border: 1px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .preview-title {
+        font-weight: 600;
+        color: #5a5c69;
+        margin-bottom: 0.75rem;
+    }
+    
+    .preview-item {
+        display: inline-block;
+        background: #4e73df;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        margin: 0.25rem;
+    }
+    
+    .json-editor {
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        background: #2d3748;
+        color: #e2e8f0;
+        border: none;
+        border-radius: 8px;
+        padding: 1rem;
+        min-height: 200px;
+    }
+    
+    .btn-group-toggle .btn {
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .alert-info {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+    
+    .form-check-input:checked {
+        background-color: #4e73df;
+        border-color: #4e73df;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                {% if object %}
+                    <i class="fas fa-edit"></i> Editar Template
+                {% else %}
+                    <i class="fas fa-plus"></i> Novo Template
+                {% endif %}
+            </h1>
+            <p class="text-muted">Configure seu template de relatório personalizado</p>
+        </div>
+        <div>
+            <a href="{% url 'relatorios:templates' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+    
+    <!-- Alertas -->
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% endfor %}
+    {% endif %}
+    
+    <form method="post" id="templateForm">
+        {% csrf_token %}
+        
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Informações Básicas -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-info-circle"></i> Informações Básicas
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="field-group">
+                                <label for="{{ form.nome.id_for_label }}">{{ form.nome.label }}</label>
+                                {{ form.nome|as_crispy_field }}
+                                <div class="field-help">Nome identificador do template</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="field-group">
+                                <label for="{{ form.tipo.id_for_label }}">{{ form.tipo.label }}</label>
+                                {{ form.tipo|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="field-group">
+                        <label for="{{ form.descricao.id_for_label }}">{{ form.descricao.label }}</label>
+                        {{ form.descricao|as_crispy_field }}
+                        <div class="field-help">Descrição detalhada do que o relatório apresenta</div>
+                    </div>
+                </div>
+                
+                <!-- Configurações de Saída -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-file-export"></i> Configurações de Saída
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                <label for="{{ form.formato_saida.id_for_label }}">{{ form.formato_saida.label }}</label>
+                                {{ form.formato_saida|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                <label for="{{ form.ordenacao_padrao.id_for_label }}">{{ form.ordenacao_padrao.label }}</label>
+                                {{ form.ordenacao_padrao|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                <label for="{{ form.agrupamento.id_for_label }}">{{ form.agrupamento.label }}</label>
+                                {{ form.agrupamento|as_crispy_field }}
+                                <div class="field-help">Campo para agrupar os resultados</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                <label>Opções</label>
+                                <div class="form-check">
+                                    {{ form.publico }}
+                                    <label class="form-check-label" for="{{ form.publico.id_for_label }}">
+                                        {{ form.publico.label }}
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    {{ form.ativo }}
+                                    <label class="form-check-label" for="{{ form.ativo.id_for_label }}">
+                                        {{ form.ativo.label }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Campos do Relatório -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-list"></i> Campos do Relatório
+                    </h5>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Selecione os campos que devem aparecer no relatório. Os campos disponíveis variam conforme o tipo de relatório selecionado.
+                    </div>
+                    
+                    <div id="campos-container" class="campos-container">
+                        <!-- Os campos serão carregados dinamicamente via JavaScript -->
+                    </div>
+                    
+                    <div class="preview-container" id="preview-container" style="display: none;">
+                        <div class="preview-title">Campos Selecionados:</div>
+                        <div id="campos-preview"></div>
+                    </div>
+                </div>
+                
+                <!-- Configurações Avançadas -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-cogs"></i> Configurações Avançadas
+                    </h5>
+                    
+                    <div class="field-group">
+                        <label for="{{ form.filtros_padrao.id_for_label }}">{{ form.filtros_padrao.label }}</label>
+                        <textarea class="form-control json-editor" name="{{ form.filtros_padrao.name }}" id="{{ form.filtros_padrao.id_for_label }}">{{ form.filtros_padrao.value|default:"" }}</textarea>
+                        {% if form.filtros_padrao.errors %}
+                            <div class="text-danger small mt-1">{{ form.filtros_padrao.errors.0 }}</div>
+                        {% endif %}
+                        <div class="field-help">Filtros padrão em formato JSON (opcional)</div>
+                    </div>
+                    
+                    <div class="field-group">
+                        <label for="{{ form.configuracoes_layout.id_for_label }}">{{ form.configuracoes_layout.label }}</label>
+                        <textarea class="form-control json-editor" name="{{ form.configuracoes_layout.name }}" id="{{ form.configuracoes_layout.id_for_label }}">{{ form.configuracoes_layout.value|default:"" }}</textarea>
+                        {% if form.configuracoes_layout.errors %}
+                            <div class="text-danger small mt-1">{{ form.configuracoes_layout.errors.0 }}</div>
+                        {% endif %}
+                        <div class="field-help">Configurações de layout em formato JSON (opcional)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Ações -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-save"></i> Ações
+                    </h5>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save"></i> 
+                            {% if object %}Atualizar Template{% else %}Criar Template{% endif %}
+                        </button>
+                        
+                        {% if object %}
+                        <a href="{% url 'relatorios:executar' object.id %}" class="btn btn-success">
+                            <i class="fas fa-play"></i> Testar Template
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'relatorios:templates' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Ajuda -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-question-circle"></i> Ajuda
+                    </h5>
+                    
+                    <div class="small text-muted">
+                        <h6>Tipos de Relatório:</h6>
+                        <ul>
+                            <li><strong>Processos:</strong> Dados dos processos jurídicos</li>
+                            <li><strong>Clientes:</strong> Informações dos clientes</li>
+                            <li><strong>Financeiro:</strong> Honorários e despesas</li>
+                            <li><strong>Produtividade:</strong> Métricas de desempenho</li>
+                            <li><strong>Prazos:</strong> Controle de prazos processuais</li>
+                            <li><strong>Documentos:</strong> Gestão documental</li>
+                        </ul>
+                        
+                        <h6>Formatos de Saída:</h6>
+                        <ul>
+                            <li><strong>PDF:</strong> Documento formatado</li>
+                            <li><strong>Excel:</strong> Planilha editável</li>
+                            <li><strong>CSV:</strong> Dados tabulares</li>
+                            <li><strong>HTML:</strong> Visualização web</li>
+                        </ul>
+                        
+                        <h6>Configurações JSON:</h6>
+                        <p>Use formato JSON válido para filtros e configurações avançadas. Exemplo:</p>
+                        <code>{"campo": "valor", "outro_campo": true}</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Campos disponíveis por tipo de relatório
+const camposPorTipo = {
+    'processos': [
+        {id: 'numero_processo', label: 'Número do Processo'},
+        {id: 'cliente', label: 'Cliente'},
+        {id: 'tipo_processo', label: 'Tipo de Processo'},
+        {id: 'area_direito', label: 'Área do Direito'},
+        {id: 'status', label: 'Status'},
+        {id: 'data_inicio', label: 'Data de Início'},
+        {id: 'valor_causa', label: 'Valor da Causa'},
+        {id: 'responsavel', label: 'Responsável'},
+        {id: 'tribunal', label: 'Tribunal'},
+        {id: 'comarca', label: 'Comarca'}
+    ],
+    'clientes': [
+        {id: 'nome', label: 'Nome'},
+        {id: 'tipo_pessoa', label: 'Tipo de Pessoa'},
+        {id: 'documento', label: 'CPF/CNPJ'},
+        {id: 'email', label: 'E-mail'},
+        {id: 'telefone', label: 'Telefone'},
+        {id: 'endereco', label: 'Endereço'},
+        {id: 'data_cadastro', label: 'Data de Cadastro'},
+        {id: 'ativo', label: 'Status'}
+    ],
+    'financeiro': [
+        {id: 'processo', label: 'Processo'},
+        {id: 'cliente', label: 'Cliente'},
+        {id: 'tipo', label: 'Tipo (Honorário/Despesa)'},
+        {id: 'valor', label: 'Valor'},
+        {id: 'data_vencimento', label: 'Data de Vencimento'},
+        {id: 'status', label: 'Status'},
+        {id: 'descricao', label: 'Descrição'},
+        {id: 'forma_pagamento', label: 'Forma de Pagamento'}
+    ],
+    'produtividade': [
+        {id: 'usuario', label: 'Usuário'},
+        {id: 'processos_total', label: 'Total de Processos'},
+        {id: 'andamentos_total', label: 'Total de Andamentos'},
+        {id: 'documentos_total', label: 'Total de Documentos'},
+        {id: 'periodo', label: 'Período'},
+        {id: 'media_atividades', label: 'Média de Atividades'}
+    ],
+    'prazos': [
+        {id: 'processo', label: 'Processo'},
+        {id: 'descricao', label: 'Descrição do Prazo'},
+        {id: 'data_prazo', label: 'Data do Prazo'},
+        {id: 'status', label: 'Status'},
+        {id: 'responsavel', label: 'Responsável'},
+        {id: 'tipo_prazo', label: 'Tipo de Prazo'}
+    ],
+    'documentos': [
+        {id: 'processo', label: 'Processo'},
+        {id: 'nome_arquivo', label: 'Nome do Arquivo'},
+        {id: 'tipo_documento', label: 'Tipo de Documento'},
+        {id: 'data_upload', label: 'Data de Upload'},
+        {id: 'tamanho', label: 'Tamanho'},
+        {id: 'usuario_upload', label: 'Usuário que fez Upload'}
+    ]
+};
+
+// Função para carregar campos baseado no tipo
+function carregarCampos() {
+    const tipoSelect = document.getElementById('id_tipo');
+    const camposContainer = document.getElementById('campos-container');
+    const previewContainer = document.getElementById('preview-container');
+    
+    if (!tipoSelect || !camposContainer) return;
+    
+    const tipoSelecionado = tipoSelect.value;
+    camposContainer.innerHTML = '';
+    
+    if (tipoSelecionado && camposPorTipo[tipoSelecionado]) {
+        const campos = camposPorTipo[tipoSelecionado];
+        
+        campos.forEach(campo => {
+            const campoDiv = document.createElement('div');
+            campoDiv.className = 'campo-item';
+            
+            campoDiv.innerHTML = `
+                <input type="checkbox" id="campo_${campo.id}" name="campos_selecionados" value="${campo.id}">
+                <label for="campo_${campo.id}">${campo.label}</label>
+            `;
+            
+            camposContainer.appendChild(campoDiv);
+        });
+        
+        // Marcar campos já selecionados (para edição)
+        {% if object and object.campos_selecionados %}
+        const camposSelecionados = {{ object.campos_selecionados|safe }};
+        if (Array.isArray(camposSelecionados)) {
+            camposSelecionados.forEach(campo => {
+                const checkbox = document.getElementById(`campo_${campo}`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+        }
+        {% endif %}
+        
+        // Adicionar event listeners para preview
+        const checkboxes = camposContainer.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', atualizarPreview);
+        });
+        
+        atualizarPreview();
+    }
+}
+
+// Função para atualizar preview dos campos selecionados
+function atualizarPreview() {
+    const checkboxes = document.querySelectorAll('input[name="campos_selecionados"]:checked');
+    const previewContainer = document.getElementById('preview-container');
+    const camposPreview = document.getElementById('campos-preview');
+    
+    if (checkboxes.length > 0) {
+        previewContainer.style.display = 'block';
+        camposPreview.innerHTML = '';
+        
+        checkboxes.forEach(checkbox => {
+            const label = document.querySelector(`label[for="${checkbox.id}"]`);
+            if (label) {
+                const previewItem = document.createElement('span');
+                previewItem.className = 'preview-item';
+                previewItem.textContent = label.textContent;
+                camposPreview.appendChild(previewItem);
+            }
+        });
+    } else {
+        previewContainer.style.display = 'none';
+    }
+}
+
+// Validação do formulário
+function validarFormulario() {
+    const checkboxes = document.querySelectorAll('input[name="campos_selecionados"]:checked');
+    
+    if (checkboxes.length === 0) {
+        alert('Selecione pelo menos um campo para o relatório.');
+        return false;
+    }
+    
+    return true;
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoSelect = document.getElementById('id_tipo');
+    const form = document.getElementById('templateForm');
+    
+    if (tipoSelect) {
+        tipoSelect.addEventListener('change', carregarCampos);
+        carregarCampos(); // Carregar campos iniciais
+    }
+    
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!validarFormulario()) {
+                e.preventDefault();
+            }
+        });
+    }
+});
+
+// Validação de JSON
+function validarJSON(textarea) {
+    const valor = textarea.value.trim();
+    
+    if (valor === '') {
+        textarea.classList.remove('is-invalid');
+        return;
+    }
+    
+    try {
+        JSON.parse(valor);
+        textarea.classList.remove('is-invalid');
+        textarea.classList.add('is-valid');
+    } catch (e) {
+        textarea.classList.remove('is-valid');
+        textarea.classList.add('is-invalid');
+    }
+}
+
+// Adicionar validação aos campos JSON
+document.addEventListener('DOMContentLoaded', function() {
+    const jsonFields = document.querySelectorAll('.json-editor');
+    
+    jsonFields.forEach(field => {
+        field.addEventListener('blur', function() {
+            validarJSON(this);
+        });
+    });
+});
+</script>
+{% endblock %}

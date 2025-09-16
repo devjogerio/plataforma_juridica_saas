@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block title %}Excluir Cliente - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Confirmar Exclusão{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'clientes:lista' %}">Clientes</a></li>
+<li class="breadcrumb-item"><a href="{% url 'clientes:detalhe' object.pk %}">{{ object.nome_razao_social|truncatechars:20 }}</a></li>
+<li class="breadcrumb-item active">Excluir</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Confirmar Exclusão do Cliente
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Informações do Cliente -->
+                <div class="row mb-4">
+                    <div class="col-md-2 text-center">
+                        {% if object.tipo_pessoa == 'PF' %}
+                            <i class="bi bi-person-circle text-primary" style="font-size: 4rem;"></i>
+                        {% else %}
+                            <i class="bi bi-building text-warning" style="font-size: 4rem;"></i>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-10">
+                        <h4 class="mb-2">{{ object.nome_razao_social }}</h4>
+                        {% if object.nome_fantasia %}
+                            <p class="text-muted mb-1">{{ object.nome_fantasia }}</p>
+                        {% endif %}
+                        <div class="d-flex gap-2 mb-2">
+                            <span class="badge bg-{% if object.tipo_pessoa == 'PF' %}info{% else %}warning{% endif %}">
+                                {{ object.get_tipo_pessoa_display }}
+                            </span>
+                            {% if object.cpf_cnpj %}
+                                <span class="badge bg-secondary">{{ object.cpf_cnpj }}</span>
+                            {% endif %}
+                        </div>
+                        {% if object.email %}
+                            <p class="mb-1"><i class="bi bi-envelope me-1"></i>{{ object.email }}</p>
+                        {% endif %}
+                        {% if object.telefone %}
+                            <p class="mb-1"><i class="bi bi-telephone me-1"></i>{{ object.telefone }}</p>
+                        {% endif %}
+                        {% if object.cidade and object.uf %}
+                            <p class="mb-0"><i class="bi bi-geo-alt me-1"></i>{{ object.cidade }}/{{ object.uf }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Aviso de Exclusão -->
+                <div class="alert alert-danger" role="alert">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Atenção! Esta ação não pode ser desfeita.
+                    </h6>
+                    <p class="mb-2">
+                        Você está prestes a excluir permanentemente o cliente <strong>{{ object.nome_razao_social }}</strong>.
+                    </p>
+                    <hr>
+                    <p class="mb-0 small">
+                        <strong>Consequências da exclusão:</strong>
+                    </p>
+                    <ul class="small mb-0">
+                        <li>Todos os dados do cliente serão removidos permanentemente</li>
+                        <li>Os processos associados a este cliente <strong>NÃO</strong> serão excluídos, mas ficarão sem cliente vinculado</li>
+                        <li>Documentos e histórico relacionados ao cliente serão mantidos nos processos</li>
+                        <li>Esta ação não pode ser revertida</li>
+                    </ul>
+                </div>
+                
+                <!-- Verificação de Processos Associados -->
+                {% if object.processos.exists %}
+                <div class="alert alert-warning" role="alert">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-folder me-2"></i>
+                        Processos Associados
+                    </h6>
+                    <p class="mb-2">
+                        Este cliente possui <strong>{{ object.processos.count }} processo{{ object.processos.count|pluralize }}</strong> associado{{ object.processos.count|pluralize }}:
+                    </p>
+                    <div class="row">
+                        {% for processo in object.processos.all|slice:":5" %}
+                        <div class="col-md-6 mb-2">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-folder me-2 text-primary"></i>
+                                <div>
+                                    <strong>{{ processo.numero_processo }}</strong><br>
+                                    <small class="text-muted">{{ processo.tipo_processo.nome }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% if object.processos.count > 5 %}
+                        <div class="col-12">
+                            <small class="text-muted">... e mais {{ object.processos.count|add:"-5" }} processo{{ object.processos.count|add:"-5"|pluralize }}.</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <hr>
+                    <p class="mb-0 small">
+                        <strong>Importante:</strong> Os processos não serão excluídos, mas ficarão sem cliente vinculado. 
+                        Você precisará associá-los a outro cliente ou gerenciá-los individualmente.
+                    </p>
+                </div>
+                {% endif %}
+                
+                <!-- Confirmação -->
+                <div class="bg-light p-3 rounded mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="confirmar-exclusao" required>
+                        <label class="form-check-label" for="confirmar-exclusao">
+                            <strong>Eu entendo que esta ação é irreversível e confirmo a exclusão do cliente.</strong>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                <form method="post" id="form-exclusao">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="{% url 'clientes:detalhe' object.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                            </a>
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-danger" id="btn-excluir" disabled>
+                                <i class="bi bi-trash me-1"></i>Confirmar Exclusão
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Informações Adicionais -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Alternativas à Exclusão
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">
+                    Se você não deseja excluir permanentemente o cliente, considere estas alternativas:
+                </p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start mb-3">
+                            <i class="bi bi-eye-slash text-warning me-2 mt-1"></i>
+                            <div>
+                                <strong>Desativar Cliente</strong><br>
+                                <small class="text-muted">
+                                    O cliente ficará oculto nas listagens principais, mas os dados serão preservados.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start mb-3">
+                            <i class="bi bi-archive text-info me-2 mt-1"></i>
+                            <div>
+                                <strong>Arquivar Dados</strong><br>
+                                <small class="text-muted">
+                                    Mantenha os dados para consulta futura sem impactar o uso diário.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <a href="{% url 'clientes:editar' object.pk %}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil me-1"></i>Editar Cliente ao Invés de Excluir
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.alert {
+    border-left: 4px solid;
+}
+
+.alert-danger {
+    border-left-color: #dc3545;
+}
+
+.alert-warning {
+    border-left-color: #ffc107;
+}
+
+.card-header.bg-danger {
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.form-check-input:checked {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkbox = document.getElementById('confirmar-exclusao');
+    const btnExcluir = document.getElementById('btn-excluir');
+    const formExclusao = document.getElementById('form-exclusao');
+    
+    // Habilitar/desabilitar botão baseado no checkbox
+    checkbox.addEventListener('change', function() {
+        btnExcluir.disabled = !this.checked;
+    });
+    
+    // Confirmação adicional no submit
+    formExclusao.addEventListener('submit', function(e) {
+        if (!checkbox.checked) {
+            e.preventDefault();
+            alert('Você deve confirmar que entende as consequências da exclusão.');
+            return false;
+        }
+        
+        const confirmacao = confirm(
+            'ÚLTIMA CONFIRMAÇÃO:\n\n' +
+            'Tem certeza absoluta que deseja excluir o cliente "{{ object.nome_razao_social|escapejs }}"?\n\n' +
+            'Esta ação é IRREVERSÍVEL!'
+        );
+        
+        if (!confirmacao) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Desabilitar botão para evitar duplo clique
+        btnExcluir.disabled = true;
+        btnExcluir.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Excluindo...';
+    });
+});
+</script>
+{% endblock %}
