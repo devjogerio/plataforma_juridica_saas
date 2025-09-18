@@ -1,0 +1,475 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Criar Primeiro Honorário - Plataforma Jurídica
+{% endblock %}
+
+{% block page_title %}
+Criar Primeiro Honorário
+{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'financeiro:dashboard' %}">Financeiro</a></li>
+<li class="breadcrumb-item"><a href="{% url 'financeiro:honorarios' %}">Honorários</a></li>
+<li class="breadcrumb-item active">Primeiro Honorário</li>
+{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho com orientações -->
+<div class="alert alert-info mb-4">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+        <div>
+            <h6 class="alert-heading mb-1">Bem-vindo ao módulo de Honorários!</h6>
+            <p class="mb-0">Configure seu primeiro honorário preenchendo as informações abaixo. Este será o modelo para futuros honorários.</p>
+        </div>
+    </div>
+</div>
+
+<form method="post" id="primeiro-honorario-form" novalidate>
+    {% csrf_token %}
+    
+    <!-- Processo e Cliente -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h6 class="mb-0">
+                <i class="bi bi-folder me-2"></i>
+                1. Processo e Cliente
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-light border-start border-primary border-4 mb-3">
+                <small class="text-muted">
+                    <i class="bi bi-lightbulb me-1"></i>
+                    Selecione o processo e cliente para os quais você está cobrando honorários.
+                </small>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Processo *</label>
+                        {{ form.processo }}
+                        {% if form.processo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.processo.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Escolha o processo relacionado ao honorário
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Cliente *</label>
+                        {{ form.cliente }}
+                        {% if form.cliente.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.cliente.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Cliente responsável pelo pagamento
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tipo e Valores -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h6 class="mb-0">
+                <i class="bi bi-calculator me-2"></i>
+                2. Tipo de Cobrança e Valores
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-light border-start border-success border-4 mb-3">
+                <small class="text-muted">
+                    <i class="bi bi-lightbulb me-1"></i>
+                    Defina como será calculado o honorário: valor fixo, percentual sobre a causa ou por hora trabalhada.
+                </small>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tipo de Cobrança *</label>
+                        {{ form.tipo_cobranca }}
+                        {% if form.tipo_cobranca.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.tipo_cobranca.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Como será calculado o valor
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3" id="valor-fixo-group">
+                        <label class="form-label fw-bold">Valor Fixo</label>
+                        {{ form.valor_fixo }}
+                        {% if form.valor_fixo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.valor_fixo.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="bi bi-currency-dollar me-1"></i>
+                            Valor total do honorário
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3" id="percentual-group">
+                        <label class="form-label fw-bold">Percentual (%)</label>
+                        {{ form.percentual }}
+                        {% if form.percentual.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.percentual.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="bi bi-percent me-1"></i>
+                            Percentual sobre o valor da causa
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3" id="valor-hora-group">
+                        <label class="form-label fw-bold">Valor por Hora</label>
+                        {{ form.valor_hora }}
+                        {% if form.valor_hora.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.valor_hora.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="bi bi-clock me-1"></i>
+                            Valor cobrado por hora
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3" id="horas-trabalhadas-group">
+                        <label class="form-label fw-bold">Horas Trabalhadas</label>
+                        {{ form.horas_trabalhadas }}
+                        {% if form.horas_trabalhadas.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.horas_trabalhadas.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="bi bi-stopwatch me-1"></i>
+                            Total de horas dedicadas
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Valor Total</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="text" class="form-control" id="valor-total-display" readonly>
+                        </div>
+                        <div class="form-text">
+                            <i class="bi bi-calculator me-1"></i>
+                            Calculado automaticamente
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Datas e Pagamento -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h6 class="mb-0">
+                <i class="bi bi-calendar me-2"></i>
+                3. Datas e Forma de Pagamento
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-light border-start border-warning border-4 mb-3">
+                <small class="text-muted">
+                    <i class="bi bi-lightbulb me-1"></i>
+                    Configure as datas importantes e como o honorário será pago.
+                </small>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Data de Vencimento *</label>
+                        {{ form.data_vencimento }}
+                        {% if form.data_vencimento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.data_vencimento.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="bi bi-calendar-check me-1"></i>
+                            Quando o pagamento deve ser feito
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Forma de Pagamento *</label>
+                        {{ form.forma_pagamento }}
+                        {% if form.forma_pagamento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.forma_pagamento.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="bi bi-credit-card me-1"></i>
+                            Como será feito o pagamento
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Status do Pagamento</label>
+                        {{ form.status_pagamento }}
+                        {% if form.status_pagamento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.status_pagamento.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Situação atual do pagamento
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Observações -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h6 class="mb-0">
+                <i class="bi bi-chat-text me-2"></i>
+                4. Observações e Detalhes
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Descrição dos Serviços</label>
+                {{ form.descricao }}
+                {% if form.descricao.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.descricao.errors.0 }}
+                    </div>
+                {% endif %}
+                <div class="form-text">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Descreva os serviços prestados que justificam o honorário
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Observações</label>
+                {{ form.observacoes }}
+                {% if form.observacoes.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.observacoes.errors.0 }}
+                    </div>
+                {% endif %}
+                <div class="form-text">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Informações adicionais sobre o honorário
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botões de Ação -->
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Campos marcados com * são obrigatórios
+                    </small>
+                </div>
+                <div>
+                    <a href="{% url 'financeiro:honorarios' %}" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-1"></i>
+                        Criar Primeiro Honorário
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Dicas Flutuantes -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050">
+    <div class="toast" id="dica-toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="bi bi-lightbulb-fill text-warning me-2"></i>
+            <strong class="me-auto">Dica</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="dica-content">
+            <!-- Conteúdo da dica será inserido via JavaScript -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('primeiro-honorario-form');
+    const tipoCobrancaField = document.getElementById('id_tipo_cobranca');
+    const valorFixoField = document.getElementById('id_valor_fixo');
+    const percentualField = document.getElementById('id_percentual');
+    const valorHoraField = document.getElementById('id_valor_hora');
+    const horasTrabalhadasField = document.getElementById('id_horas_trabalhadas');
+    const valorTotalDisplay = document.getElementById('valor-total-display');
+    
+    // Grupos de campos
+    const valorFixoGroup = document.getElementById('valor-fixo-group');
+    const percentualGroup = document.getElementById('percentual-group');
+    const valorHoraGroup = document.getElementById('valor-hora-group');
+    const horasTrabalhadasGroup = document.getElementById('horas-trabalhadas-group');
+    
+    // Função para mostrar/ocultar campos baseado no tipo de cobrança
+    function toggleFields() {
+        const tipoCobranca = tipoCobrancaField.value;
+        
+        // Ocultar todos os grupos primeiro
+        valorFixoGroup.style.display = 'none';
+        percentualGroup.style.display = 'none';
+        valorHoraGroup.style.display = 'none';
+        horasTrabalhadasGroup.style.display = 'none';
+        
+        // Mostrar campos relevantes
+        switch(tipoCobranca) {
+            case 'fixo':
+                valorFixoGroup.style.display = 'block';
+                break;
+            case 'percentual':
+                percentualGroup.style.display = 'block';
+                break;
+            case 'hora':
+                valorHoraGroup.style.display = 'block';
+                horasTrabalhadasGroup.style.display = 'block';
+                break;
+        }
+        
+        calcularValorTotal();
+    }
+    
+    // Função para calcular valor total
+    function calcularValorTotal() {
+        const tipoCobranca = tipoCobrancaField.value;
+        let valorTotal = 0;
+        
+        switch(tipoCobranca) {
+            case 'fixo':
+                valorTotal = parseFloat(valorFixoField.value) || 0;
+                break;
+            case 'percentual':
+                // Para percentual, precisaríamos do valor da causa do processo
+                const percentual = parseFloat(percentualField.value) || 0;
+                valorTotal = 0; // Será calculado no backend
+                break;
+            case 'hora':
+                const valorHora = parseFloat(valorHoraField.value) || 0;
+                const horas = parseFloat(horasTrabalhadasField.value) || 0;
+                valorTotal = valorHora * horas;
+                break;
+        }
+        
+        valorTotalDisplay.value = valorTotal.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+    
+    // Event listeners
+    tipoCobrancaField.addEventListener('change', toggleFields);
+    valorFixoField.addEventListener('input', calcularValorTotal);
+    percentualField.addEventListener('input', calcularValorTotal);
+    valorHoraField.addEventListener('input', calcularValorTotal);
+    horasTrabalhadasField.addEventListener('input', calcularValorTotal);
+    
+    // Inicializar
+    toggleFields();
+    
+    // Validação em tempo real
+    const campos = form.querySelectorAll('input, select, textarea');
+    campos.forEach(campo => {
+        campo.addEventListener('blur', function() {
+            if (this.hasAttribute('required') && !this.value.trim()) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        });
+    });
+    
+    // Dicas contextuais
+    const dicas = {
+        'id_tipo_cobranca': 'Escolha "Fixo" para um valor determinado, "Percentual" para calcular sobre o valor da causa, ou "Por Hora" para cobrar pelo tempo trabalhado.',
+        'id_valor_fixo': 'Digite o valor total que será cobrado pelo serviço prestado.',
+        'id_percentual': 'Digite o percentual que será aplicado sobre o valor da causa do processo.',
+        'id_valor_hora': 'Digite quanto você cobra por hora de trabalho.',
+        'id_data_vencimento': 'Defina uma data realista para o pagamento, considerando o prazo do cliente.'
+    };
+    
+    Object.keys(dicas).forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('focus', function() {
+                mostrarDica(dicas[fieldId]);
+            });
+        }
+    });
+    
+    function mostrarDica(texto) {
+        const toast = document.getElementById('dica-toast');
+        const content = document.getElementById('dica-content');
+        content.textContent = texto;
+        
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+    }
+    
+    // Formatação de moeda
+    const camposMoeda = ['id_valor_fixo', 'id_valor_hora'];
+    camposMoeda.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('input', function() {
+                let value = this.value.replace(/\D/g, '');
+                value = (value / 100).toFixed(2);
+                this.value = value;
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

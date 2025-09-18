@@ -5,6 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
 from datetime import datetime, timedelta
+import json
 from processos.models import Processo, Andamento, Prazo
 from clientes.models import Cliente
 from financeiro.models import Honorario, Despesa
@@ -36,11 +37,12 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['total_clientes'] = Cliente.objects.count()
         
         # Processos por status para gráfico
-        context['processos_por_status'] = list(
+        processos_por_status = list(
             Processo.objects.values('status')
             .annotate(count=Count('id'))
             .order_by('status')
         )
+        context['processos_por_status'] = json.dumps(processos_por_status)
         
         # Prazos críticos (próximos 7 dias)
         proximos_7_dias = hoje + timedelta(days=7)
@@ -65,11 +67,12 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         )['total'] or 0
         
         # Processos por área do direito
-        context['processos_por_area'] = list(
+        processos_por_area = list(
             Processo.objects.values('area_direito')
             .annotate(count=Count('id'))
             .order_by('-count')[:5]
         )
+        context['processos_por_area'] = json.dumps(processos_por_area)
         
         return context
 

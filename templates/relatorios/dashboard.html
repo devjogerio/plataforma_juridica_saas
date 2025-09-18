@@ -109,10 +109,10 @@
         </div>
         <div>
             <a href="{% url 'relatorios:template_create' %}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Novo Template
+                <i class="bi bi-plus"></i> Novo Template
             </a>
             <a href="{% url 'relatorios:templates' %}" class="btn btn-outline-primary">
-                <i class="fas fa-list"></i> Ver Todos
+                <i class="bi bi-list"></i> Ver Todos
             </a>
         </div>
     </div>
@@ -126,8 +126,8 @@
                         <div class="h4 mb-0">{{ total_templates }}</div>
                         <div class="small">Templates Disponíveis</div>
                     </div>
-                    <div class="ml-3">
-                        <i class="fas fa-file-alt fa-2x opacity-75"></i>
+                    <div class="ms-3">
+                        <i class="bi bi-file-earmark-text fa-2x opacity-75"></i>
                     </div>
                 </div>
             </div>
@@ -140,8 +140,8 @@
                         <div class="h4 mb-0">{{ templates_publicos }}</div>
                         <div class="small">Templates Públicos</div>
                     </div>
-                    <div class="ml-3">
-                        <i class="fas fa-share-alt fa-2x opacity-75"></i>
+                    <div class="ms-3">
+                        <i class="bi bi-share fa-2x opacity-75"></i>
                     </div>
                 </div>
             </div>
@@ -154,8 +154,8 @@
                         <div class="h4 mb-0">{{ execucoes_hoje }}</div>
                         <div class="small">Execuções Hoje</div>
                     </div>
-                    <div class="ml-3">
-                        <i class="fas fa-play fa-2x opacity-75"></i>
+                    <div class="ms-3">
+                        <i class="bi bi-play-fill fa-2x opacity-75"></i>
                     </div>
                 </div>
             </div>
@@ -168,8 +168,8 @@
                         <div class="h4 mb-0">{{ dashboards.count }}</div>
                         <div class="small">Dashboards Personalizados</div>
                     </div>
-                    <div class="ml-3">
-                        <i class="fas fa-tachometer-alt fa-2x opacity-75"></i>
+                    <div class="ms-3">
+                        <i class="bi bi-speedometer2 fa-2x opacity-75"></i>
                     </div>
                 </div>
             </div>
@@ -199,15 +199,15 @@
                                     
                                     <div class="d-flex justify-content-between align-items-center">
                                         <small class="text-muted">
-                                            <i class="fas fa-user"></i> {{ template.usuario_criador.get_full_name|default:template.usuario_criador.username }}
+                                            <i class="bi bi-person"></i> {{ template.usuario_criador.get_full_name|default:template.usuario_criador.username }}
                                         </small>
                                         <div>
                                             <a href="{% url 'relatorios:executar' template.id %}" class="btn btn-sm btn-primary">
-                                                <i class="fas fa-play"></i> Executar
+                                                <i class="bi bi-play-fill"></i> Executar
                                             </a>
                                             {% if template.usuario_criador == request.user or request.user.is_staff %}
                                             <a href="{% url 'relatorios:template_update' template.id %}" class="btn btn-sm btn-outline-secondary">
-                                                <i class="fas fa-edit"></i>
+                                                <i class="bi bi-pencil"></i>
                                             </a>
                                             {% endif %}
                                         </div>
@@ -218,10 +218,10 @@
                         </div>
                     {% else %}
                         <div class="text-center py-4">
-                            <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                            <i class="bi bi-file-earmark-text fa-3x text-muted mb-3"></i>
                             <p class="text-muted">Nenhum template disponível</p>
                             <a href="{% url 'relatorios:template_create' %}" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Criar Primeiro Template
+                                <i class="bi bi-plus"></i> Criar Primeiro Template
                             </a>
                         </div>
                     {% endif %}
@@ -236,19 +236,19 @@
                 <h6 class="mb-3">Ações Rápidas</h6>
                 <div class="text-center">
                     <a href="{% url 'relatorios:processos' %}" class="action-btn">
-                        <i class="fas fa-gavel"></i> Relatório de Processos
+                        <i class="bi bi-hammer"></i> Relatório de Processos
                     </a>
                     <a href="{% url 'relatorios:clientes' %}" class="action-btn">
-                        <i class="fas fa-users"></i> Relatório de Clientes
+                        <i class="bi bi-people"></i> Relatório de Clientes
                     </a>
                     <a href="{% url 'relatorios:financeiro' %}" class="action-btn">
-                        <i class="fas fa-dollar-sign"></i> Relatório Financeiro
+                        <i class="bi bi-currency-dollar"></i> Relatório Financeiro
                     </a>
                     <a href="{% url 'relatorios:produtividade' %}" class="action-btn">
-                        <i class="fas fa-chart-line"></i> Produtividade
+                        <i class="bi bi-graph-up"></i> Produtividade
                     </a>
                     <a href="{% url 'relatorios:dashboards' %}" class="action-btn">
-                        <i class="fas fa-tachometer-alt"></i> Dashboards
+                        <i class="bi bi-speedometer2"></i> Dashboards
                     </a>
                 </div>
             </div>
@@ -276,7 +276,7 @@
                         {% endfor %}
                     {% else %}
                         <div class="text-center py-3">
-                            <i class="fas fa-history fa-2x text-muted mb-2"></i>
+                            <i class="bi bi-clock-history fa-2x text-muted mb-2"></i>
                             <p class="text-muted small">Nenhuma execução recente</p>
                         </div>
                     {% endif %}
@@ -297,7 +297,7 @@
                             <span class="template-type type-{{ template.tipo }}">{{ template.get_tipo_display }}</span>
                         </div>
                         <div class="text-right">
-                            <span class="badge badge-primary">{{ template.total_execucoes }}</span>
+                            <span class="badge bg-primary">{{ template.total_execucoes }}</span>
                         </div>
                     </div>
                     {% endfor %}
@@ -311,7 +311,7 @@
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">Dashboards Personalizados</h6>
                     <a href="{% url 'relatorios:dashboard_create' %}" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-plus"></i>
+                        <i class="bi bi-plus"></i>
                     </a>
                 </div>
                 <div class="card-body">
@@ -320,10 +320,10 @@
                         <div class="flex-grow-1">
                             <a href="{% url 'relatorios:dashboard_detail' dashboard.id %}" class="font-weight-bold text-decoration-none">
                                 {{ dashboard.nome }}
-                                {% if dashboard.padrao %}<i class="fas fa-star text-warning ml-1"></i>{% endif %}
+                                {% if dashboard.padrao %}<i class="bi bi-star-fill text-warning ms-1"></i>{% endif %}
                             </a>
                             {% if dashboard.publico %}
-                            <span class="badge badge-info badge-sm ml-1">Público</span>
+                            <span class="badge bg-info badge-sm ms-1">Público</span>
                             {% endif %}
                         </div>
                     </div>

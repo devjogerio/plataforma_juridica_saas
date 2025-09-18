@@ -6,6 +6,7 @@ from django.urls import reverse_lazy
 from django.http import JsonResponse
 from django.utils import timezone
 from .models import Processo, Andamento, Prazo
+from .forms import ProcessoForm, ProcessoPrimeiroForm
 from clientes.models import Cliente
 from django.db.models import Q
 
@@ -26,13 +27,10 @@ class ProcessoListView(LoginRequiredMixin, ListView):
         """
         queryset = Processo.objects.select_related(
             'cliente', 
-            'usuario_responsavel',
-            'tipo_processo',
-            'tribunal'
+            'usuario_responsavel'
         ).prefetch_related(
             'andamentos__usuario',
-            'prazos__usuario_responsavel',
-            'documentos'
+            'prazos__usuario_responsavel'
         )
         
         # Filtros
@@ -88,14 +86,111 @@ class ProcessoCreateView(LoginRequiredMixin, CreateView):
     Cria um novo processo
     """
     model = Processo
+    form_class = ProcessoForm
     template_name = 'processos/form.html'
-    fields = ['numero_processo', 'tipo_processo', 'area_direito', 'status', 'valor_causa', 
-              'comarca_tribunal', 'vara_orgao', 'data_inicio', 'cliente', 'observacoes']
     login_url = '/login/'
     
+    def get_form_kwargs(self):
+        """
+        Passa o usuário atual para o formulário
+        """
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+    
+    def get_initial(self):
+        """
+        Define valores iniciais baseados nos parâmetros GET
+        """
+        initial = super().get_initial()
+        
+        # Se há um cliente especificado na URL
+        cliente_id = self.request.GET.get('cliente')
+        if cliente_id:
+            try:
+                cliente = Cliente.objects.get(pk=cliente_id)
+                initial['cliente'] = cliente
+            except Cliente.DoesNotExist:
+                pass
+        
+        return initial
+    
     def form_valid(self, form):
-        form.instance.usuario_responsavel = self.request.user
-        messages.success(self.request, 'Processo criado com sucesso!')
+        """
+        Processa o formulário válido e exibe mensagem de sucesso detalhada
+        """
+        response = super().form_valid(form)
+        
+        # Mensagem de sucesso com detalhes do processo criado
+        messages.success(
+            self.request, 
+            f'✅ Processo criado com sucesso!<br>'
+            f'<strong>Número:</strong> {self.object.numero_processo}<br>'
+            f'<strong>Cliente:</strong> {self.object.cliente.nome_razao_social}<br>'
+            f'<strong>Área:</strong> {self.object.get_area_direito_display()}'
+        )
+        
+        return response
+    
+    def get_success_url(self):
+        return reverse_lazy('processos:detalhe', kwargs={'pk': self.object.pk})
+
+
+class ProcessoPrimeiroCreateView(LoginRequiredMixin, CreateView):
+    """
+    View específica para criação do primeiro processo.
+    Inclui orientações e validações especiais para novos usuários.
+    """
+    model = Processo
+    form_class = ProcessoPrimeiroForm
+    template_name = 'processos/primeiro_processo_form.html'
+    login_url = '/login/'
+    
+    def get_form_kwargs(self):
+        """
+        Passa o usuário atual para o formulário
+        """
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+    
+    def get_initial(self):
+        """
+        Define valores iniciais para o primeiro processo
+        """
+        initial = super().get_initial()
+        
+        # Se há um cliente especificado na URL
+        cliente_id = self.request.GET.get('cliente')
+        if cliente_id:
+            try:
+                cliente = Cliente.objects.get(pk=cliente_id)
+                initial['cliente'] = cliente
+            except Cliente.DoesNotExist:
+                pass
+        
+        return initial
+    
+    def get_context_data(self, **kwargs):
+        """
+        Adiciona contexto específico para o primeiro processo
+        """
+        context = super().get_context_data(**kwargs)
+        context['is_primeiro_processo'] = True
+        context['total_processos'] = Processo.objects.filter(
+            usuario_responsavel=self.request.user
+        ).count()
+        return context
+    
+    def form_valid(self, form):
+        """
+        Processa o formulário válido com mensagem especial
+        """
+        messages.success(
+            self.request, 
+            'Parabéns! Seu primeiro processo foi criado com sucesso! '
+            'Agora você pode adicionar andamentos, prazos e documentos.'
+        )
         return super().form_valid(form)
     
     def get_success_url(self):

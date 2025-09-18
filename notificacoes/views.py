@@ -222,28 +222,40 @@ def notificacoes_recentes_ajax(request):
     """
     Retorna notificações recentes via AJAX
     """
-    notificacoes = Notificacao.objects.filter(
-        usuario=request.user
-    ).select_related('usuario').order_by('-criada_em')[:10]
-    
-    data = []
-    for notificacao in notificacoes:
-        data.append({
-            'id': notificacao.id,
-            'titulo': notificacao.titulo,
-            'mensagem': notificacao.mensagem,
-            'tipo': notificacao.tipo,
-            'lida': notificacao.lida,
-            'data_criacao': notificacao.criada_em.isoformat(),
-            'url_acao': notificacao.url_acao or '#',
-            'icone': notificacao.get_icone_classe(),
-            'cor': notificacao.get_cor_classe()
+    try:
+        notificacoes = Notificacao.objects.filter(
+            usuario=request.user
+        ).select_related('usuario').order_by('-criada_em')[:10]
+        
+        data = []
+        for notificacao in notificacoes:
+            data.append({
+                'id': notificacao.id,
+                'titulo': notificacao.titulo,
+                'mensagem': notificacao.mensagem,
+                'tipo': notificacao.tipo,
+                'lida': notificacao.lida,
+                'data_criacao': notificacao.criada_em.isoformat(),
+                'url_acao': notificacao.url_acao or '#',
+                'icone': notificacao.get_icone_classe(),
+                'cor': notificacao.get_cor_classe()
+            })
+        
+        return JsonResponse({
+            'notificacoes': data,
+            'total_nao_lidas': notificacoes.filter(lida=False).count()
         })
-    
-    return JsonResponse({
-        'notificacoes': data,
-        'total_nao_lidas': notificacoes.filter(lida=False).count()
-    })
+    except Exception as e:
+        # Log do erro para debug
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Erro ao carregar notificações para usuário {request.user.id}: {str(e)}")
+        
+        # Retornar resposta vazia em caso de erro
+        return JsonResponse({
+            'notificacoes': [],
+            'total_nao_lidas': 0
+        })
 
 
 @login_required

@@ -18,10 +18,20 @@ env = environ.Env(
 )
 
 # Read .env file
-environ.Env.read_env(BASE_DIR / '.env')
+env_file = BASE_DIR / '.env'
+if env_file.exists():
+    environ.Env.read_env(env_file)
+else:
+    print(f"Arquivo .env não encontrado em: {env_file}")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY')
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = env.bool('DEBUG', default=False)
+
+# ALLOWED_HOSTS configuration
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', 'testserver'])
 
 # Application definition
 INSTALLED_APPS = [

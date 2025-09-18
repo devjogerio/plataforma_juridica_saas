@@ -14,8 +14,8 @@ from itertools import chain
 from operator import attrgetter
 import json
 
-from .models import Honorario, ParcelaHonorario, Despesa, ContaBancaria
-from .forms import HonorarioForm, ParcelaHonorarioForm, DespesaForm, ContaBancariaForm, FiltroFinanceiroForm
+from .models import Honorario, ParcelaHonorario, Despesa, ContaBancaria, DocumentoHonorario
+from .forms import HonorarioForm, HonorarioPrimeiroForm, ParcelaHonorarioForm, DespesaForm, ContaBancariaForm, FiltroFinanceiroForm, DocumentoHonorarioForm
 from processos.models import Processo
 from clientes.models import Cliente
 
@@ -133,7 +133,7 @@ class HonorarioListView(LoginRequiredMixin, ListView):
     
     def get_queryset(self):
         queryset = Honorario.objects.select_related(
-            'processo', 'cliente', 'processo__tipo_processo'
+            'processo', 'cliente'
         )
         
         # Filtrar por usuário se não for staff
@@ -212,6 +212,37 @@ class HonorarioCreateView(LoginRequiredMixin, CreateView):
     
     def get_success_url(self):
         return reverse('financeiro:detalhe_honorario', kwargs={'pk': self.object.pk})
+
+
+class HonorarioPrimeiroCreateView(LoginRequiredMixin, CreateView):
+    """
+    Criação do primeiro honorário com orientações especiais
+    """
+    model = Honorario
+    form_class = HonorarioPrimeiroForm
+    template_name = 'financeiro/primeiro_honorario_form.html'
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_primeiro_honorario'] = True
+        context['titulo'] = 'Criar Primeiro Honorário'
+        context['subtitulo'] = 'Configure seu primeiro honorário no sistema'
+        return context
+    
+    def form_valid(self, form):
+        messages.success(
+            self.request, 
+            'Primeiro honorário criado com sucesso! Agora você pode gerenciar todos os seus honorários.'
+        )
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse('financeiro:honorarios')
 
 
 class HonorarioUpdateView(LoginRequiredMixin, UpdateView):
@@ -813,3 +844,122 @@ def transacoes_view(request):
     }
     
     return render(request, 'financeiro/transacoes.html', context)
+
+
+@login_required
+def upload_documento_honorario(request, honorario_pk):
+    """
+    View para upload de documentos de honorários via AJAX
+    """
+    honorario = get_object_or_404(Honorario, pk=honorario_pk)
+    
+    # Verificar permissões
+    if not request.user.is_staff and honorario.processo.responsavel != request.user:
+        return JsonResponse({'error': 'Sem permissão para acessar este honorário'}, status=403)
+    
+    if request.method == 'POST':
+        form = DocumentoHonorarioForm(request.POST, request.FILES)
+        if form.is_valid():
+            documento = form.save(commit=False)
+            documento.honorario = honorario
+            documento.usuario_upload = request.user
+            documento.save()
+            
+            return JsonResponse({
+                'success': True,
+                'documento': {
+                    'id': str(documento.id),
+                    'nome_arquivo': documento.nome_arquivo,
+                    'tipo_documento': documento.get_tipo_documento_display(),
+                    'tamanho_formatado': documento.tamanho_formatado,
+                    'created_at': documento.created_at.strftime('%d/%m/%Y %H:%M'),
+                    'is_imagem': documento.is_imagem,
+                    'is_pdf': documento.is_pdf,
+                    'url_download': reverse('financeiro:download_documento', args=[documento.id])
+                }
+            })
+        else:
+            return JsonResponse({'error': form.errors}, status=400)
+    
+    return JsonResponse({'error': 'Método não permitido'}, status=405)
+
+
+@login_required
+def listar_documentos_honorario(request, honorario_id):
+    """
+    View para listar e fazer upload de documentos de um honorário
+    """
+    honorario = get_object_or_404(Honorario, pk=honorario_id)
+    
+    # Verificar permissões
+    if not request.user.has_perm('financeiro.view_honorario'):
+        messages.error(request, 'Você não tem permissão para visualizar honorários.')
+        return redirect('financeiro:honorarios')
+    
+    if request.method == 'POST':
+        form = DocumentoHonorarioForm(request.POST, request.FILES)
+        if form.is_valid():
+            documento = form.save(commit=False)
+            documento.honorario = honorario
+            documento.usuario = request.user
+            documento.save()
+            messages.success(request, 'Documento anexado com sucesso!')
+            return redirect('financeiro:listar_documentos_honorario', honorario_id=honorario_id)
+    else:
+        form = DocumentoHonorarioForm()
+    
+    documentos = DocumentoHonorario.objects.filter(honorario=honorario).order_by('-data_upload')
+    
+    context = {
+        'honorario': honorario,
+        'documentos': documentos,
+        'form': form,
+    }
+    
+    return render(request, 'financeiro/documentos_honorario.html', context)
+
+
+@login_required
+def download_documento_honorario(request, documento_pk):
+    """
+    View para download de documentos de honorários
+    """
+    documento = get_object_or_404(DocumentoHonorario, pk=documento_pk)
+    
+    # Verificar permissões
+    if not request.user.is_staff and documento.honorario.processo.responsavel != request.user:
+        messages.error(request, 'Sem permissão para acessar este documento.')
+        return redirect('financeiro:honorarios')
+    
+    try:
+        response = HttpResponse(documento.arquivo.read(), content_type='application/octet-stream')
+        response['Content-Disposition'] = f'attachment; filename="{documento.nome_arquivo}"'
+        return response
+    except Exception as e:
+        messages.error(request, f'Erro ao baixar o arquivo: {str(e)}')
+        return redirect('financeiro:honorario_detalhe', pk=documento.honorario.pk)
+
+
+@login_required
+def excluir_documento_honorario(request, documento_pk):
+    """
+    View para excluir documentos de honorários via AJAX
+    """
+    documento = get_object_or_404(DocumentoHonorario, pk=documento_pk)
+    
+    # Verificar permissões
+    if not request.user.is_staff and documento.honorario.processo.responsavel != request.user:
+        return JsonResponse({'error': 'Sem permissão para excluir este documento'}, status=403)
+    
+    if request.method == 'POST':
+        try:
+            # Excluir arquivo físico
+            if documento.arquivo:
+                documento.arquivo.delete(save=False)
+            
+            documento.delete()
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'error': f'Erro ao excluir documento: {str(e)}'}, status=500)
+    
+    return JsonResponse({'error': 'Método não permitido'}, status=405)

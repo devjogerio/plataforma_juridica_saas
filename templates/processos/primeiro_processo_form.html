@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+
+{% block title %}Criar Primeiro Processo - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Criar Seu Primeiro Processo{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'processos:lista' %}">Processos</a></li>
+<li class="breadcrumb-item active">Primeiro Processo</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Card de Boas-vindas -->
+        <div class="card border-primary mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-star me-2"></i>
+                    Bem-vindo! Vamos criar seu primeiro processo
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <p class="mb-2">
+                            <strong>Parabéns por dar este importante passo!</strong> 
+                            Criar seu primeiro processo é o início da organização completa da sua prática jurídica.
+                        </p>
+                        <p class="mb-0 text-muted">
+                            Preencha as informações abaixo com cuidado. Todos os campos marcados com 
+                            <span class="text-danger">*</span> são obrigatórios.
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <i class="bi bi-folder-plus text-primary" style="font-size: 3rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulário Principal -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-folder-plus me-2"></i>
+                    Dados do Processo
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate id="primeiro-processo-form">
+                    {% csrf_token %}
+                    
+                    <!-- Alertas de Validação -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Seção 1: Identificação do Processo -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-1-circle me-2"></i>
+                                Identificação do Processo
+                            </h6>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.numero_processo.id_for_label }}" class="form-label">
+                                {{ form.numero_processo.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.numero_processo }}
+                            {% if form.numero_processo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.numero_processo.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Exemplo: 1234567-89.2023.8.26.0001
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.tipo_processo.id_for_label }}" class="form-label">
+                                {{ form.tipo_processo.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.tipo_processo }}
+                            {% if form.tipo_processo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.tipo_processo.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.area_direito.id_for_label }}" class="form-label">
+                                {{ form.area_direito.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.area_direito }}
+                            {% if form.area_direito.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.area_direito.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">
+                                {{ form.status.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.status.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Seção 2: Informações Processuais -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-2-circle me-2"></i>
+                                Informações Processuais
+                            </h6>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.comarca_tribunal.id_for_label }}" class="form-label">
+                                {{ form.comarca_tribunal.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.comarca_tribunal }}
+                            {% if form.comarca_tribunal.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.comarca_tribunal.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.vara_orgao.id_for_label }}" class="form-label">
+                                {{ form.vara_orgao.label }}
+                            </label>
+                            {{ form.vara_orgao }}
+                            {% if form.vara_orgao.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.vara_orgao.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.instancia.id_for_label }}" class="form-label">
+                                {{ form.instancia.label }}
+                            </label>
+                            {{ form.instancia }}
+                            {% if form.instancia.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.instancia.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.valor_causa.id_for_label }}" class="form-label">
+                                {{ form.valor_causa.label }}
+                            </label>
+                            {{ form.valor_causa }}
+                            {% if form.valor_causa.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.valor_causa.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Valor em reais (R$). Deixe em branco se não aplicável.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Seção 3: Cliente e Datas -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-3-circle me-2"></i>
+                                Cliente e Datas
+                            </h6>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.cliente.id_for_label }}" class="form-label">
+                                {{ form.cliente.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.cliente }}
+                            {% if form.cliente.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.cliente.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.data_inicio.id_for_label }}" class="form-label">
+                                {{ form.data_inicio.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.data_inicio }}
+                            {% if form.data_inicio.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.data_inicio.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Seção 4: Detalhes Adicionais -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-4-circle me-2"></i>
+                                Detalhes Adicionais
+                            </h6>
+                        </div>
+                        
+                        <div class="col-12 mb-3">
+                            <label for="{{ form.assunto.id_for_label }}" class="form-label">
+                                {{ form.assunto.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.assunto }}
+                            {% if form.assunto.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.assunto.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Descreva brevemente o objeto do processo
+                            </div>
+                        </div>
+                        
+                        <div class="col-12 mb-3">
+                            <label for="{{ form.observacoes.id_for_label }}" class="form-label">
+                                {{ form.observacoes.label }}
+                            </label>
+                            {{ form.observacoes }}
+                            {% if form.observacoes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.observacoes.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Informações adicionais que considere relevantes
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botões de Ação -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'processos:lista' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>
+                                    Voltar
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-check-circle me-2"></i>
+                                    Criar Meu Primeiro Processo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Card de Dicas -->
+        <div class="card border-info mt-4">
+            <div class="card-header bg-light">
+                <h6 class="mb-0 text-info">
+                    <i class="bi bi-lightbulb me-2"></i>
+                    Dicas para o seu primeiro processo
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Verifique se o número do processo está correto
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Escolha a área do direito mais específica
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Preencha o assunto de forma clara e objetiva
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Após criar, você poderá adicionar andamentos e prazos
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Adiciona validação em tempo real
+    const form = document.getElementById('primeiro-processo-form');
+    const requiredFields = form.querySelectorAll('[required]');
+    
+    requiredFields.forEach(field => {
+        field.addEventListener('blur', function() {
+            if (this.value.trim() === '') {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        });
+    });
+    
+    // Formatação do valor da causa
+    const valorCausaField = document.getElementById('{{ form.valor_causa.id_for_label }}');
+    if (valorCausaField) {
+        valorCausaField.addEventListener('input', function() {
+            let value = this.value.replace(/\D/g, '');
+            if (value) {
+                value = (parseInt(value) / 100).toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                });
+                this.value = value;
+            }
+        });
+    }
+    
+    // Validação do número do processo
+    const numeroProcessoField = document.getElementById('{{ form.numero_processo.id_for_label }}');
+    if (numeroProcessoField) {
+        numeroProcessoField.addEventListener('input', function() {
+            // Remove caracteres não numéricos exceto pontos e hífens
+            this.value = this.value.replace(/[^\d.-]/g, '');
+        });
+    }
+});
+</script>
+{% endblock %}

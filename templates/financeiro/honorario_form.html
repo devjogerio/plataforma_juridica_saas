@@ -12,7 +12,7 @@
 <li class="breadcrumb-item"><a href="{% url 'financeiro:dashboard' %}">Financeiro</a></li>
 <li class="breadcrumb-item"><a href="{% url 'financeiro:honorarios' %}">Honorários</a></li>
 {% if form.instance.pk %}
-    <li class="breadcrumb-item"><a href="{% url 'financeiro:detalhe_honorario' form.instance.pk %}">{{ form.instance.processo.numero_processo }}</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'financeiro:honorario_detalhe' form.instance.pk %}">{{ form.instance.processo.numero_processo }}</a></li>
     <li class="breadcrumb-item active">Editar</li>
 {% else %}
     <li class="breadcrumb-item active">Novo Honorário</li>
@@ -367,7 +367,7 @@
         <div class="card-body">
             <div class="d-flex justify-content-between">
                 <div>
-                    <a href="{% if form.instance.pk %}{% url 'financeiro:detalhe_honorario' form.instance.pk %}{% else %}{% url 'financeiro:honorarios' %}{% endif %}" 
+                    <a href="{% if form.instance.pk %}{% url 'financeiro:honorario_detalhe' form.instance.pk %}{% else %}{% url 'financeiro:honorarios' %}{% endif %}" 
                        class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-1"></i>Cancelar
                     </a>

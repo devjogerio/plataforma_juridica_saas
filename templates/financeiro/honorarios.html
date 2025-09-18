@@ -157,6 +157,7 @@
                             <th>Vencimento</th>
                             <th>Status</th>
                             <th>Parcelas</th>
+                            <th>Documentos</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -220,13 +221,27 @@
                                     <span class="text-muted">À vista</span>
                                 {% endif %}
                             </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'financeiro:listar_documentos_honorario' honorario.pk %}" 
+                                       class="btn btn-outline-info" title="Ver Documentos">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                        <span class="badge bg-secondary ms-1">{{ honorario.documentos.count }}</span>
+                                    </a>
+                                    <button class="btn btn-outline-success" 
+                                            onclick="uploadDocumento({{ honorario.pk }})" 
+                                            title="Adicionar Documento">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </button>
+                                </div>
+                            </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <a href="{% url 'financeiro:detalhe_honorario' honorario.pk %}" 
+                                    <a href="{% url 'financeiro:honorario_detalhe' honorario.pk %}" 
                                        class="btn btn-outline-primary" title="Ver Detalhes">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a href="{% url 'financeiro:editar_honorario' honorario.pk %}" 
+                                    <a href="{% url 'financeiro:honorario_editar' honorario.pk %}" 
                                        class="btn btn-outline-secondary" title="Editar">
                                         <i class="bi bi-pencil"></i>
                                     </a>
@@ -348,6 +363,80 @@ function enviarCobranca(honorarioId) {
     if (confirm('Deseja enviar cobrança por e-mail para o cliente?')) {
         alert('Funcionalidade em desenvolvimento.');
     }
+}
+
+function uploadDocumento(honorarioId) {
+    // Criar modal para upload de documento
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Adicionar Documento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Título do Documento *</label>
+                            <input type="text" name="titulo" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descrição</label>
+                            <textarea name="descricao" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Arquivo *</label>
+                            <input type="file" name="arquivo" class="form-control" required 
+                                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                            <div class="form-text">Formatos aceitos: PDF, DOC, DOCX, JPG, PNG (máx. 10MB)</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Enviar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bootstrapModal = new bootstrap.Modal(modal);
+    bootstrapModal.show();
+    
+    // Enviar formulário via AJAX
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch(`/financeiro/honorarios/${honorarioId}/upload-documento/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrapModal.hide();
+                location.reload(); // Recarregar para atualizar contador
+            } else {
+                alert('Erro: ' + (data.error || 'Erro desconhecido'));
+            }
+        })
+        .catch(error => {
+            alert('Erro ao enviar arquivo: ' + error);
+        });
+    });
+    
+    // Remover modal quando fechado
+    modal.addEventListener('hidden.bs.modal', function() {
+        document.body.removeChild(modal);
+    });
 }
 
 function exportarHonorarios() {

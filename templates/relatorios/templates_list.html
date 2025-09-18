@@ -109,10 +109,10 @@
         </div>
         <div>
             <a href="{% url 'relatorios:template_create' %}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Novo Template
+                <i class="bi bi-plus"></i> Novo Template
             </a>
-            <a href="{% url 'relatorios:dashboard' %}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Voltar
+            <a href="{% url 'relatorios:templates' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
             </a>
         </div>
     </div>
@@ -123,7 +123,7 @@
             <div class="row">
                 <div class="col-md-4">
                     <div class="search-box">
-                        <i class="fas fa-search search-icon"></i>
+                        <i class="bi bi-search search-icon"></i>
                         <input type="text" class="form-control" name="busca" 
                                placeholder="Buscar por nome ou descrição..." 
                                value="{{ request.GET.busca }}">
@@ -172,11 +172,11 @@
             <div class="row mt-3">
                 <div class="col-md-12">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search"></i> Buscar
-                    </button>
-                    <a href="{% url 'relatorios:templates' %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-times"></i> Limpar Filtros
-                    </a>
+                            <i class="bi bi-search"></i> Buscar
+                        </button>
+                        <a href="{% url 'relatorios:templates' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x"></i> Limpar Filtros
+                        </a>
                 </div>
             </div>
         </form>
@@ -193,32 +193,32 @@
                             <h5 class="mb-1">{{ template.nome }}</h5>
                             <span class="template-type type-{{ template.tipo }}">{{ template.get_tipo_display }}</span>
                             {% if template.publico %}
-                            <span class="badge badge-info ml-1">Público</span>
-                            {% endif %}
-                            {% if not template.ativo %}
-                            <span class="badge badge-secondary ml-1">Inativo</span>
+                            <span class="badge bg-info ms-1">Público</span>
+                        {% endif %}
+                        {% if not template.ativo %}
+                        <span class="badge bg-secondary ms-1">Inativo</span>
                             {% endif %}
                         </div>
                         
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
-                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-ellipsis-v"></i>
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-three-dots-vertical"></i>
                             </button>
-                            <div class="dropdown-menu dropdown-menu-right">
-                                <a class="dropdown-item" href="{% url 'relatorios:executar' template.id %}">
-                                    <i class="fas fa-play"></i> Executar
-                                </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'relatorios:executar' template.id %}">
+                                    <i class="bi bi-play-fill"></i> Executar
+                                </a></li>
                                 {% if template.usuario_criador == request.user or request.user.is_staff %}
-                                <a class="dropdown-item" href="{% url 'relatorios:template_update' template.id %}">
-                                    <i class="fas fa-edit"></i> Editar
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item text-danger" href="{% url 'relatorios:template_delete' template.id %}">
-                                    <i class="fas fa-trash"></i> Excluir
-                                </a>
+                                <li><a class="dropdown-item" href="{% url 'relatorios:template_update' template.id %}">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'relatorios:template_delete' template.id %}">
+                                    <i class="bi bi-trash"></i> Excluir
+                                </a></li>
                                 {% endif %}
-                            </div>
+                            </ul>
                         </div>
                     </div>
                     
@@ -226,34 +226,34 @@
                     
                     <div class="template-actions">
                         <a href="{% url 'relatorios:executar' template.id %}" class="btn btn-primary btn-sm">
-                            <i class="fas fa-play"></i> Executar
+                            <i class="bi bi-play-fill"></i> Executar
                         </a>
                         
                         {% if template.usuario_criador == request.user or request.user.is_staff %}
                         <a href="{% url 'relatorios:template_update' template.id %}" class="btn btn-outline-secondary btn-sm">
-                            <i class="fas fa-edit"></i> Editar
+                            <i class="bi bi-pencil"></i> Editar
                         </a>
                         {% endif %}
                         
-                        <span class="badge badge-light">
-                            <i class="fas fa-file-{{ template.formato_saida }}"></i> {{ template.get_formato_saida_display }}
+                        <span class="badge bg-light text-dark">
+                            <i class="bi bi-file-{{ template.formato_saida }}"></i> {{ template.get_formato_saida_display }}
                         </span>
                     </div>
                     
                     <div class="template-meta">
                         <div class="meta-item">
-                            <i class="fas fa-user"></i>
+                            <i class="bi bi-person"></i>
                             <span>{{ template.usuario_criador.get_full_name|default:template.usuario_criador.username }}</span>
                         </div>
                         
                         <div class="meta-item">
-                            <i class="fas fa-calendar"></i>
+                            <i class="bi bi-calendar"></i>
                             <span>{{ template.data_criacao|date:"d/m/Y" }}</span>
                         </div>
                         
                         {% if template.execucoes.count > 0 %}
                         <div class="meta-item">
-                            <i class="fas fa-play-circle"></i>
+                            <i class="bi bi-play-circle"></i>
                             <span>{{ template.execucoes.count }} execuções</span>
                         </div>
                         {% endif %}
@@ -268,17 +268,17 @@
         <nav aria-label="Navegação de páginas">
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">
-                            <i class="fas fa-angle-double-left"></i>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
-                            <i class="fas fa-angle-left"></i>
-                        </a>
-                    </li>
-                {% endif %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
                 
                 {% for num in page_obj.paginator.page_range %}
                     {% if page_obj.number == num %}
@@ -293,33 +293,33 @@
                 {% endfor %}
                 
                 {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
-                            <i class="fas fa-angle-right"></i>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.paginator.num_pages }}">
-                            <i class="fas fa-angle-double-right"></i>
-                        </a>
-                    </li>
-                {% endif %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.paginator.num_pages }}">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
             </ul>
         </nav>
         {% endif %}
         
     {% else %}
         <div class="empty-state">
-            <i class="fas fa-file-alt"></i>
+            <i class="bi bi-file-earmark-text"></i>
             <h4>Nenhum template encontrado</h4>
             <p>{% if request.GET.busca or request.GET.tipo or request.GET.formato %}Tente ajustar os filtros de busca{% else %}Você ainda não possui templates de relatórios{% endif %}</p>
             {% if not request.GET.busca and not request.GET.tipo and not request.GET.formato %}
             <a href="{% url 'relatorios:template_create' %}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Criar Primeiro Template
+                <i class="bi bi-plus"></i> Criar Primeiro Template
             </a>
             {% else %}
             <a href="{% url 'relatorios:templates' %}" class="btn btn-outline-primary">
-                <i class="fas fa-times"></i> Limpar Filtros
+                <i class="bi bi-x"></i> Limpar Filtros
             </a>
             {% endif %}
         </div>
@@ -353,7 +353,7 @@ document.addEventListener('click', function(e) {
 
 // Tooltip para ações
 $(function () {
-    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-bs-toggle="tooltip"]').tooltip();
 });
 </script>
 {% endblock %}

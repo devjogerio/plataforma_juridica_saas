@@ -864,7 +864,7 @@ def _gerar_dados_relatorio(template, filtros, usuario):
         campos_selecionados = template.campos_selecionados or []
         
         # Gerar registros
-        for processo in qs.select_related('cliente', 'tipo_processo', 'area_direito', 'responsavel'):
+        for processo in qs.select_related('cliente', 'area_direito', 'responsavel'):
             registro = {}
             
             if 'numero_processo' in campos_selecionados:

@@ -95,13 +95,13 @@
         <div class="row align-items-center">
             <div class="col">
                 <h1 class="mb-2">
-                    <i class="fas fa-user-edit me-2"></i>Editar Perfil
+                    <i class="bi bi-person-gear me-2"></i>Editar Perfil
                 </h1>
                 <p class="mb-0">Atualize suas informações pessoais e preferências</p>
             </div>
             <div class="col-auto">
                 <a href="{% url 'usuarios:perfil' %}" class="btn btn-light">
-                    <i class="fas fa-arrow-left me-1"></i>Voltar ao Perfil
+                    <i class="bi bi-arrow-left me-1"></i>Voltar ao Perfil
                 </a>
             </div>
         </div>
@@ -116,7 +116,7 @@
             <div class="col-md-8">
                 <!-- Informações Pessoais -->
                 <div class="form-section personal-section">
-                    <h5><i class="fas fa-user me-2"></i>Informações Pessoais</h5>
+                    <h5><i class="bi bi-person me-2"></i>Informações Pessoais</h5>
                     
                     <div class="row">
                         <div class="col-md-6">
@@ -167,7 +167,7 @@
 
                 <!-- Preferências -->
                 <div class="form-section preferences-section">
-                    <h5><i class="fas fa-cog me-2"></i>Preferências</h5>
+                    <h5><i class="bi bi-gear me-2"></i>Preferências</h5>
                     
                     <div class="row">
                         <div class="col-md-6">
@@ -219,7 +219,7 @@
 
                 <!-- Notificações -->
                 <div class="form-section">
-                    <h5><i class="fas fa-bell me-2"></i>Notificações</h5>
+                    <h5><i class="bi bi-bell me-2"></i>Notificações</h5>
                     
                     <div class="row">
                         <div class="col-md-6">
@@ -261,14 +261,14 @@
             <div class="col-md-4">
                 <!-- Avatar -->
                 <div class="form-section text-center">
-                    <h5><i class="fas fa-image me-2"></i>Foto do Perfil</h5>
+                    <h5><i class="bi bi-image me-2"></i>Foto do Perfil</h5>
                     
                     <div class="avatar-upload mb-3">
                         <div class="avatar-preview" id="avatarPreview">
                             {% if user.avatar %}
                                 <img src="{{ user.avatar.url }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                             {% else %}
-                                <i class="fas fa-user"></i>
+                                <i class="bi bi-person"></i>
                             {% endif %}
                         </div>
                         <input type="file" id="avatar" name="avatar" accept="image/*">
@@ -283,7 +283,7 @@
 
                 <!-- Informações da Conta -->
                 <div class="form-section">
-                    <h5><i class="fas fa-info-circle me-2"></i>Informações da Conta</h5>
+                    <h5><i class="bi bi-info-circle me-2"></i>Informações da Conta</h5>
                     
                     <div class="mb-3">
                         <label class="form-label text-muted">Nome de Usuário</label>
@@ -312,17 +312,17 @@
 
                 <!-- Ações -->
                 <div class="form-section">
-                    <h5><i class="fas fa-tools me-2"></i>Ações</h5>
+                    <h5><i class="bi bi-tools me-2"></i>Ações</h5>
                     
                     <div class="d-grid gap-2">
                         <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#alterarSenhaModal">
-                            <i class="fas fa-key me-1"></i>Alterar Senha
+                            <i class="bi bi-key me-1"></i>Alterar Senha
                         </button>
                         <button type="button" class="btn btn-outline-info btn-sm">
-                            <i class="fas fa-download me-1"></i>Exportar Dados
+                            <i class="bi bi-download me-1"></i>Exportar Dados
                         </button>
                         <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#excluirContaModal">
-                            <i class="fas fa-trash me-1"></i>Excluir Conta
+                            <i class="bi bi-trash me-1"></i>Excluir Conta
                         </button>
                     </div>
                 </div>
@@ -334,10 +334,10 @@
             <div class="col-12">
                 <div class="form-section text-center">
                     <button type="submit" class="btn btn-success btn-save me-3">
-                        <i class="fas fa-save me-1"></i>Salvar Alterações
+                        <i class="bi bi-floppy me-1"></i>Salvar Alterações
                     </button>
                     <a href="{% url 'usuarios:perfil' %}" class="btn btn-secondary">
-                        <i class="fas fa-times me-1"></i>Cancelar
+                        <i class="bi bi-x me-1"></i>Cancelar
                     </a>
                 </div>
             </div>
@@ -389,7 +389,7 @@
             </div>
             <div class="modal-body">
                 <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <i class="bi bi-exclamation-triangle me-2"></i>
                     <strong>Atenção!</strong> Esta ação é irreversível.
                 </div>
                 <p>Ao excluir sua conta, todos os seus dados serão permanentemente removidos, incluindo:</p>
@@ -405,7 +405,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-danger" id="btnExcluirConta" disabled>
-                    <i class="fas fa-trash me-1"></i>Excluir Conta
+                    <i class="bi bi-trash me-1"></i>Excluir Conta
                 </button>
             </div>
         </div>

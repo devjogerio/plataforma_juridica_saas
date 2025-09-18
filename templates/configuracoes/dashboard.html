@@ -119,14 +119,14 @@
         <div class="row align-items-center">
             <div class="col">
                 <h1 class="mb-2">
-                    <i class="fas fa-cogs me-2"></i>Configurações do Sistema
+                    <i class="bi bi-gear me-2"></i>Configurações do Sistema
                 </h1>
                 <p class="mb-0">Gerencie tipos de processo, áreas do direito, modelos e configurações gerais</p>
             </div>
             <div class="col-auto">
                 <div class="d-flex gap-2">
                     <span class="badge bg-light text-dark fs-6">
-                        <i class="fas fa-database me-1"></i>{{ total_configuracoes }} configurações
+                        <i class="bi bi-database me-1"></i>{{ total_configuracoes }} configurações
                     </span>
                 </div>
             </div>
@@ -144,17 +144,17 @@
                     <div class="config-card">
                         <div class="text-center">
                             <div class="config-icon tipos-processo">
-                                <i class="fas fa-folder-open"></i>
+                                <i class="bi bi-folder-open"></i>
                             </div>
                             <h4>Tipos de Processo</h4>
                             <div class="stat-number">{{ total_tipos_processo }}</div>
                             <p class="text-muted mb-3">Configure os tipos de processo disponíveis</p>
                             <div class="d-grid gap-2">
                                 <a href="{% url 'configuracoes:tipos_processo' %}" class="btn btn-primary">
-                                    <i class="fas fa-list me-1"></i>Gerenciar
+                                    <i class="bi bi-list me-1"></i>Gerenciar
                                 </a>
                                 <a href="{% url 'configuracoes:criar_tipo_processo' %}" class="btn btn-outline-primary btn-sm">
-                                    <i class="fas fa-plus me-1"></i>Novo Tipo
+                                    <i class="bi bi-plus me-1"></i>Novo Tipo
                                 </a>
                             </div>
                         </div>
@@ -166,17 +166,17 @@
                     <div class="config-card">
                         <div class="text-center">
                             <div class="config-icon areas-direito">
-                                <i class="fas fa-balance-scale"></i>
+                                <i class="bi bi-balance-scale"></i>
                             </div>
                             <h4>Áreas do Direito</h4>
                             <div class="stat-number">{{ total_areas_direito }}</div>
-                            <p class="text-muted mb-3">Configure as áreas do direito</p>
+                            <p class="text-muted mb-3">Configure as áreas de atuação jurídica</p>
                             <div class="d-grid gap-2">
-                                <a href="{% url 'configuracoes:areas_direito' %}" class="btn btn-success">
-                                    <i class="fas fa-list me-1"></i>Gerenciar
+                                <a href="{% url 'configuracoes:areas_direito' %}" class="btn btn-primary">
+                                    <i class="bi bi-list me-1"></i>Gerenciar
                                 </a>
-                                <a href="{% url 'configuracoes:criar_area_direito' %}" class="btn btn-outline-success btn-sm">
-                                    <i class="fas fa-plus me-1"></i>Nova Área
+                                <a href="{% url 'configuracoes:criar_area_direito' %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-plus me-1"></i>Nova Área
                                 </a>
                             </div>
                         </div>
@@ -188,17 +188,17 @@
                     <div class="config-card">
                         <div class="text-center">
                             <div class="config-icon status-processo">
-                                <i class="fas fa-tags"></i>
+                                <i class="bi bi-tags"></i>
                             </div>
                             <h4>Status de Processo</h4>
                             <div class="stat-number">{{ total_status_processo }}</div>
                             <p class="text-muted mb-3">Configure os status personalizados</p>
                             <div class="d-grid gap-2">
                                 <a href="{% url 'configuracoes:status_processo' %}" class="btn btn-warning">
-                                    <i class="fas fa-list me-1"></i>Gerenciar
+                                    <i class="bi bi-list me-1"></i>Gerenciar
                                 </a>
                                 <a href="{% url 'configuracoes:criar_status_processo' %}" class="btn btn-outline-warning btn-sm">
-                                    <i class="fas fa-plus me-1"></i>Novo Status
+                                    <i class="bi bi-plus me-1"></i>Novo Status
                                 </a>
                             </div>
                         </div>
@@ -210,17 +210,17 @@
                     <div class="config-card">
                         <div class="text-center">
                             <div class="config-icon modelos">
-                                <i class="fas fa-file-alt"></i>
+                                <i class="bi bi-file-text"></i>
                             </div>
                             <h4>Modelos de Documento</h4>
                             <div class="stat-number">{{ total_modelos_documento }}</div>
                             <p class="text-muted mb-3">Gerencie modelos de documentos</p>
                             <div class="d-grid gap-2">
                                 <a href="{% url 'configuracoes:modelos_documentos' %}" class="btn btn-info">
-                                    <i class="fas fa-list me-1"></i>Gerenciar
+                                    <i class="bi bi-list me-1"></i>Gerenciar
                                 </a>
                                 <a href="{% url 'configuracoes:criar_modelo_documento' %}" class="btn btn-outline-info btn-sm">
-                                    <i class="fas fa-plus me-1"></i>Novo Modelo
+                                    <i class="bi bi-plus me-1"></i>Novo Modelo
                                 </a>
                             </div>
                         </div>
@@ -233,7 +233,7 @@
                         <div class="row align-items-center">
                             <div class="col-md-2 text-center">
                                 <div class="config-icon sistema">
-                                    <i class="fas fa-server"></i>
+                                    <i class="bi bi-server"></i>
                                 </div>
                             </div>
                             <div class="col-md-7">
@@ -244,11 +244,11 @@
                                 <div class="d-grid">
                                     {% if user.is_staff %}
                                     <a href="{% url 'configuracoes:sistema' %}" class="btn btn-secondary">
-                                        <i class="fas fa-cog me-1"></i>Configurar
+                                        <i class="bi bi-gear me-1"></i>Configurar
                                     </a>
                                     {% else %}
                                     <button class="btn btn-secondary" disabled>
-                                        <i class="fas fa-lock me-1"></i>Restrito
+                                        <i class="bi bi-lock me-1"></i>Restrito
                                     </button>
                                     {% endif %}
                                 </div>
@@ -264,21 +264,21 @@
             <!-- Ações Rápidas -->
             <div class="quick-actions mb-4">
                 <h5 class="mb-3">
-                    <i class="fas fa-bolt me-2"></i>Ações Rápidas
+                    <i class="bi bi-lightning me-2"></i>Ações Rápidas
                 </h5>
                 <div class="d-grid gap-2">
                     <a href="{% url 'configuracoes:criar_tipo_processo' %}" class="btn btn-outline-primary btn-quick-action">
-                        <i class="fas fa-plus me-2"></i>Novo Tipo de Processo
+                        <i class="bi bi-plus me-2"></i>Novo Tipo de Processo
                     </a>
                     <a href="{% url 'configuracoes:criar_area_direito' %}" class="btn btn-outline-success btn-quick-action">
-                        <i class="fas fa-plus me-2"></i>Nova Área do Direito
+                        <i class="bi bi-plus me-2"></i>Nova Área do Direito
                     </a>
                     <a href="{% url 'configuracoes:criar_modelo_documento' %}" class="btn btn-outline-info btn-quick-action">
-                        <i class="fas fa-plus me-2"></i>Novo Modelo de Documento
+                        <i class="bi bi-plus me-2"></i>Novo Modelo de Documento
                     </a>
                     {% if user.is_staff %}
                     <a href="{% url 'configuracoes:sistema' %}" class="btn btn-outline-secondary btn-quick-action">
-                        <i class="fas fa-cog me-2"></i>Configurações Avançadas
+                        <i class="bi bi-gear me-2"></i>Configurações Avançadas
                     </a>
                     {% endif %}
                 </div>
@@ -288,7 +288,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="fas fa-clock me-2"></i>Adicionados Recentemente
+                        <i class="bi bi-clock me-2"></i>Adicionados Recentemente
                     </h5>
                 </div>
                 <div class="card-body">
@@ -324,7 +324,7 @@
 
                     {% if not tipos_processo_recentes and not areas_direito_recentes %}
                         <div class="text-center text-muted py-4">
-                            <i class="fas fa-inbox fa-3x mb-3 opacity-50"></i>
+                            <i class="bi bi-inbox fa-3x mb-3 opacity-50"></i>
                             <p>Nenhum item recente encontrado.</p>
                         </div>
                     {% endif %}
@@ -336,7 +336,7 @@
             <div class="card mt-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="fas fa-star me-2"></i>Modelos Mais Usados
+                        <i class="bi bi-star me-2"></i>Modelos Mais Usados
                     </h5>
                 </div>
                 <div class="card-body">

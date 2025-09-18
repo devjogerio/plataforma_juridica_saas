@@ -129,16 +129,16 @@
         <div>
             <h1 class="h3 mb-0 text-gray-800">
                 {% if object %}
-                    <i class="fas fa-edit"></i> Editar Template
+                    <i class="bi bi-pencil"></i> Editar Template
                 {% else %}
-                    <i class="fas fa-plus"></i> Novo Template
+                    <i class="bi bi-plus"></i> Novo Template
                 {% endif %}
             </h1>
             <p class="text-muted">Configure seu template de relatório personalizado</p>
         </div>
         <div>
             <a href="{% url 'relatorios:templates' %}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Voltar
+                <i class="bi bi-arrow-left"></i> Voltar
             </a>
         </div>
     </div>
@@ -163,7 +163,7 @@
                 <!-- Informações Básicas -->
                 <div class="form-section">
                     <h5 class="section-title">
-                        <i class="fas fa-info-circle"></i> Informações Básicas
+                        <i class="bi bi-info-circle"></i> Informações Básicas
                     </h5>
                     
                     <div class="row">
@@ -193,7 +193,7 @@
                 <!-- Configurações de Saída -->
                 <div class="form-section">
                     <h5 class="section-title">
-                        <i class="fas fa-file-export"></i> Configurações de Saída
+                        <i class="bi bi-file-earmark-arrow-up"></i> Configurações de Saída
                     </h5>
                     
                     <div class="row">
@@ -244,11 +244,11 @@
                 <!-- Campos do Relatório -->
                 <div class="form-section">
                     <h5 class="section-title">
-                        <i class="fas fa-list"></i> Campos do Relatório
+                        <i class="bi bi-list-ul"></i> Campos do Relatório
                     </h5>
                     
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i>
+                        <i class="bi bi-info-circle"></i>
                         Selecione os campos que devem aparecer no relatório. Os campos disponíveis variam conforme o tipo de relatório selecionado.
                     </div>
                     
@@ -265,7 +265,7 @@
                 <!-- Configurações Avançadas -->
                 <div class="form-section">
                     <h5 class="section-title">
-                        <i class="fas fa-cogs"></i> Configurações Avançadas
+                        <i class="bi bi-gear"></i> Configurações Avançadas
                     </h5>
                     
                     <div class="field-group">
@@ -293,23 +293,23 @@
                 <!-- Ações -->
                 <div class="form-section">
                     <h5 class="section-title">
-                        <i class="fas fa-save"></i> Ações
+                        <i class="bi bi-floppy"></i> Ações
                     </h5>
                     
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-save"></i> 
+                            <i class="bi bi-floppy"></i> 
                             {% if object %}Atualizar Template{% else %}Criar Template{% endif %}
                         </button>
                         
                         {% if object %}
                         <a href="{% url 'relatorios:executar' object.id %}" class="btn btn-success">
-                            <i class="fas fa-play"></i> Testar Template
+                            <i class="bi bi-play"></i> Testar Template
                         </a>
                         {% endif %}
                         
                         <a href="{% url 'relatorios:templates' %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-times"></i> Cancelar
+                            <i class="bi bi-x"></i> Cancelar
                         </a>
                     </div>
                 </div>
@@ -317,7 +317,7 @@
                 <!-- Ajuda -->
                 <div class="form-section">
                     <h5 class="section-title">
-                        <i class="fas fa-question-circle"></i> Ajuda
+                        <i class="bi bi-question-circle"></i> Ajuda
                     </h5>
                     
                     <div class="small text-muted">

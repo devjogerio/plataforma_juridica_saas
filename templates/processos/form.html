@@ -92,9 +92,37 @@
                                 </div>
                             {% endif %}
                             <div class="form-text">
-                                <a href="{% url 'clientes:criar' %}" target="_blank" class="text-decoration-none">
+                                <a href="{% url 'clientes:cadastrar' %}" target="_blank" class="text-decoration-none">
                                     <i class="bi bi-plus-circle me-1"></i>Cadastrar novo cliente
                                 </a>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.area_direito_temp.id_for_label }}" class="form-label">
+                                Área do Direito <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select {% if form.area_direito_temp.errors %}is-invalid{% endif %}" 
+                                    id="{{ form.area_direito_temp.id_for_label }}" 
+                                    name="{{ form.area_direito_temp.name }}">
+                                <option value="">Selecione a área do direito</option>
+                                {% for value, label in form.area_direito_temp.field.choices %}
+                                    {% if value %}
+                                        <option value="{{ value }}" 
+                                                {% if form.area_direito_temp.value == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            {% if form.area_direito_temp.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.area_direito_temp.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Selecione primeiro a área para ver os tipos de processo disponíveis
                             </div>
                         </div>
                         
@@ -102,34 +130,29 @@
                             <label for="{{ form.tipo_processo.id_for_label }}" class="form-label">
                                 Tipo de Processo <span class="text-danger">*</span>
                             </label>
-                            <input type="text" 
-                                   class="form-control {% if form.tipo_processo.errors %}is-invalid{% endif %}" 
-                                   id="{{ form.tipo_processo.id_for_label }}" 
-                                   name="{{ form.tipo_processo.name }}" 
-                                   value="{{ form.tipo_processo.value|default:'' }}"
-                                   placeholder="Ex: Judicial, Administrativo, Consultivo">
+                            <select class="form-select {% if form.tipo_processo.errors %}is-invalid{% endif %}" 
+                                    id="{{ form.tipo_processo.id_for_label }}" 
+                                    name="{{ form.tipo_processo.name }}"
+                                    disabled>
+                                <option value="">Selecione primeiro a área do direito</option>
+                                {% for value, label in form.tipo_processo.field.choices %}
+                                    {% if value %}
+                                        <option value="{{ value }}" 
+                                                {% if form.tipo_processo.value == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
                             {% if form.tipo_processo.errors %}
                                 <div class="invalid-feedback">
                                     {{ form.tipo_processo.errors.0 }}
                                 </div>
                             {% endif %}
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.area_direito.id_for_label }}" class="form-label">
-                                Área do Direito <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" 
-                                   class="form-control {% if form.area_direito.errors %}is-invalid{% endif %}" 
-                                   id="{{ form.area_direito.id_for_label }}" 
-                                   name="{{ form.area_direito.name }}" 
-                                   value="{{ form.area_direito.value|default:'' }}"
-                                   placeholder="Ex: Civil, Trabalhista, Criminal">
-                            {% if form.area_direito.errors %}
-                                <div class="invalid-feedback">
-                                    {{ form.area_direito.errors.0 }}
-                                </div>
-                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-lightbulb me-1"></i>
+                                <span id="tipo-processo-hint">Os tipos serão carregados após selecionar a área</span>
+                            </div>
                         </div>
                         
                         <div class="col-md-6 mb-3">
@@ -181,38 +204,90 @@
                             </h6>
                         </div>
                         
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.comarca_tribunal.id_for_label }}" class="form-label">
-                                Comarca/Tribunal
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.estado_temp.id_for_label }}" class="form-label">
+                                Estado <span class="text-danger">*</span>
                             </label>
-                            <input type="text" 
-                                   class="form-control {% if form.comarca_tribunal.errors %}is-invalid{% endif %}" 
-                                   id="{{ form.comarca_tribunal.id_for_label }}" 
-                                   name="{{ form.comarca_tribunal.name }}" 
-                                   value="{{ form.comarca_tribunal.value|default:'' }}"
-                                   placeholder="Ex: Comarca de São Paulo">
+                            <select class="form-select {% if form.estado_temp.errors %}is-invalid{% endif %}" 
+                                    id="{{ form.estado_temp.id_for_label }}" 
+                                    name="{{ form.estado_temp.name }}">
+                                <option value="">Selecione o estado</option>
+                                {% for value, label in form.estado_temp.field.choices %}
+                                    {% if value %}
+                                        <option value="{{ value }}" 
+                                                {% if form.estado_temp.value == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            {% if form.estado_temp.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.estado_temp.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Selecione primeiro o estado
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.comarca_tribunal.id_for_label }}" class="form-label">
+                                Comarca/Tribunal <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select {% if form.comarca_tribunal.errors %}is-invalid{% endif %}" 
+                                    id="{{ form.comarca_tribunal.id_for_label }}" 
+                                    name="{{ form.comarca_tribunal.name }}"
+                                    disabled>
+                                <option value="">Selecione primeiro o estado</option>
+                                {% for value, label in form.comarca_tribunal.field.choices %}
+                                    {% if value %}
+                                        <option value="{{ value }}" 
+                                                {% if form.comarca_tribunal.value == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
                             {% if form.comarca_tribunal.errors %}
                                 <div class="invalid-feedback">
                                     {{ form.comarca_tribunal.errors.0 }}
                                 </div>
                             {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-lightbulb me-1"></i>
+                                <span id="comarca-hint">As comarcas serão carregadas após selecionar o estado</span>
+                            </div>
                         </div>
                         
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="{{ form.vara_orgao.id_for_label }}" class="form-label">
-                                Vara/Órgão
+                                Vara/Órgão <span class="text-danger">*</span>
                             </label>
-                            <input type="text" 
-                                   class="form-control {% if form.vara_orgao.errors %}is-invalid{% endif %}" 
-                                   id="{{ form.vara_orgao.id_for_label }}" 
-                                   name="{{ form.vara_orgao.name }}" 
-                                   value="{{ form.vara_orgao.value|default:'' }}"
-                                   placeholder="Ex: 1ª Vara Cível">
+                            <select class="form-select {% if form.vara_orgao.errors %}is-invalid{% endif %}" 
+                                    id="{{ form.vara_orgao.id_for_label }}" 
+                                    name="{{ form.vara_orgao.name }}"
+                                    disabled>
+                                <option value="">Selecione primeiro a comarca</option>
+                                {% for value, label in form.vara_orgao.field.choices %}
+                                    {% if value %}
+                                        <option value="{{ value }}" 
+                                                {% if form.vara_orgao.value == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
                             {% if form.vara_orgao.errors %}
                                 <div class="invalid-feedback">
                                     {{ form.vara_orgao.errors.0 }}
                                 </div>
                             {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-lightbulb me-1"></i>
+                                <span id="vara-hint">As varas serão carregadas após selecionar a comarca</span>
+                            </div>
                         </div>
                     </div>
                     
@@ -326,9 +401,144 @@ document.getElementById('id_numero_processo').addEventListener('input', function
     e.target.value = value;
 });
 
+// Controle dos dropdowns de área e tipo de processo
+document.addEventListener('DOMContentLoaded', function() {
+    const areaSelect = document.getElementById('{{ form.area_direito_temp.id_for_label }}');
+    const tipoSelect = document.getElementById('{{ form.tipo_processo.id_for_label }}');
+    const tipoHint = document.getElementById('tipo-processo-hint');
+    
+    // Dados dos tipos de processo por área (do backend)
+    const tiposPorArea = {{ form.get_tipos_processo_json|safe }};
+    
+    areaSelect.addEventListener('change', function() {
+        const areaSelecionada = this.value;
+        
+        // Limpar opções do tipo de processo
+        tipoSelect.innerHTML = '<option value="">Selecione o tipo de processo</option>';
+        
+        if (areaSelecionada && tiposPorArea[areaSelecionada]) {
+            // Habilitar o select de tipo
+            tipoSelect.disabled = false;
+            
+            // Adicionar opções do tipo de processo
+            tiposPorArea[areaSelecionada].forEach(function(tipo) {
+                const option = document.createElement('option');
+                option.value = tipo.value;
+                option.textContent = tipo.label;
+                tipoSelect.appendChild(option);
+            });
+            
+            tipoHint.textContent = `${tiposPorArea[areaSelecionada].length} tipos disponíveis para ${this.options[this.selectedIndex].text}`;
+        } else {
+            // Desabilitar o select de tipo
+            tipoSelect.disabled = true;
+            tipoHint.textContent = 'Os tipos serão carregados após selecionar a área';
+        }
+    });
+    
+    // Trigger inicial se já houver valor selecionado
+    if (areaSelect.value) {
+        areaSelect.dispatchEvent(new Event('change'));
+    }
+});
+
+// Controle dos dropdowns de estado, comarca e vara
+document.addEventListener('DOMContentLoaded', function() {
+    const estadoSelect = document.getElementById('{{ form.estado_temp.id_for_label }}');
+    const comarcaSelect = document.getElementById('{{ form.comarca_tribunal.id_for_label }}');
+    const varaSelect = document.getElementById('{{ form.vara_orgao.id_for_label }}');
+    const comarcaHint = document.getElementById('comarca-hint');
+    const varaHint = document.getElementById('vara-hint');
+    
+    // Dados das comarcas por estado e varas por comarca (do backend)
+    const comarcasPorEstado = {{ form.get_comarcas_tribunais_json|safe }};
+    const varasPorComarca = {{ form.get_varas_orgaos_json|safe }};
+    
+    // Controle do dropdown de estado -> comarca
+    estadoSelect.addEventListener('change', function() {
+        const estadoSelecionado = this.value;
+        
+        // Limpar opções da comarca e vara
+        comarcaSelect.innerHTML = '<option value="">Selecione a comarca/tribunal</option>';
+        varaSelect.innerHTML = '<option value="">Selecione primeiro a comarca</option>';
+        varaSelect.disabled = true;
+        
+        if (estadoSelecionado && comarcasPorEstado[estadoSelecionado]) {
+            // Habilitar o select de comarca
+            comarcaSelect.disabled = false;
+            
+            // Adicionar opções de comarca
+            comarcasPorEstado[estadoSelecionado].forEach(function(comarca) {
+                const option = document.createElement('option');
+                option.value = comarca.value;
+                option.textContent = comarca.label;
+                comarcaSelect.appendChild(option);
+            });
+            
+            comarcaHint.textContent = `${comarcasPorEstado[estadoSelecionado].length} comarcas disponíveis para ${this.options[this.selectedIndex].text}`;
+        } else {
+            // Desabilitar o select de comarca
+            comarcaSelect.disabled = true;
+            comarcaHint.textContent = 'As comarcas serão carregadas após selecionar o estado';
+        }
+        
+        varaHint.textContent = 'As varas serão carregadas após selecionar a comarca';
+    });
+    
+    // Controle do dropdown de comarca -> vara
+    comarcaSelect.addEventListener('change', function() {
+        const comarcaSelecionada = this.value;
+        
+        // Limpar opções da vara
+        varaSelect.innerHTML = '<option value="">Selecione a vara/órgão</option>';
+        
+        if (comarcaSelecionada) {
+            // Habilitar o select de vara sempre que uma comarca for selecionada
+            varaSelect.disabled = false;
+            
+            // Verificar se a comarca tem varas específicas definidas
+            let varasDisponiveis = [];
+            
+            if (varasPorComarca[comarcaSelecionada]) {
+                // Usar varas específicas da comarca
+                varasDisponiveis = varasPorComarca[comarcaSelecionada];
+                varaHint.textContent = `${varasDisponiveis.length} varas específicas disponíveis para ${this.options[this.selectedIndex].text}`;
+            } else if (varasPorComarca['generica']) {
+                // Usar varas genéricas quando não há varas específicas
+                varasDisponiveis = varasPorComarca['generica'];
+                varaHint.textContent = `${varasDisponiveis.length} varas genéricas disponíveis para ${this.options[this.selectedIndex].text}`;
+            }
+            
+            // Adicionar opções de vara
+            varasDisponiveis.forEach(function(vara) {
+                const option = document.createElement('option');
+                option.value = vara.value;
+                option.textContent = vara.label;
+                varaSelect.appendChild(option);
+            });
+        } else {
+            // Desabilitar o select de vara apenas se nenhuma comarca estiver selecionada
+            varaSelect.disabled = true;
+            varaHint.textContent = 'As varas serão carregadas após selecionar a comarca';
+        }
+    });
+    
+    // Trigger inicial se já houver valores selecionados
+    if (estadoSelect.value) {
+        estadoSelect.dispatchEvent(new Event('change'));
+        
+        // Aguardar um pouco para o primeiro dropdown ser populado
+        setTimeout(function() {
+            if (comarcaSelect.value) {
+                comarcaSelect.dispatchEvent(new Event('change'));
+            }
+        }, 100);
+    }
+});
+
 // Validação do formulário
 document.querySelector('form').addEventListener('submit', function(e) {
-    const requiredFields = ['numero_processo', 'cliente', 'tipo_processo', 'area_direito', 'data_inicio'];
+    const requiredFields = ['numero_processo', 'cliente', 'area_direito_temp', 'tipo_processo', 'estado_temp', 'comarca_tribunal', 'vara_orgao', 'data_inicio'];
     let hasErrors = false;
     
     requiredFields.forEach(function(fieldName) {

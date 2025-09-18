@@ -6,6 +6,7 @@ app_name = 'processos'
 urlpatterns = [
     path('', views.ProcessoListView.as_view(), name='lista'),
     path('novo/', views.ProcessoCreateView.as_view(), name='criar'),
+    path('primeiro/', views.ProcessoPrimeiroCreateView.as_view(), name='primeiro_processo'),
     path('<uuid:pk>/', views.ProcessoDetailView.as_view(), name='detalhe'),
     path('<uuid:pk>/editar/', views.ProcessoUpdateView.as_view(), name='editar'),
     path('<uuid:pk>/excluir/', views.ProcessoDeleteView.as_view(), name='excluir'),

@@ -268,7 +268,7 @@
                                 </button>
                                 <ul class="dropdown-menu">
                                     <li>
-                                        <a class="dropdown-item" href="{% if transacao.tipo == 'honorario' %}{% url 'financeiro:detalhe_honorario' transacao.pk %}{% else %}{% url 'financeiro:detalhe_despesa' transacao.pk %}{% endif %}">
+                                        <a class="dropdown-item" href="{% if transacao.tipo == 'honorario' %}{% url 'financeiro:honorario_detalhe' transacao.pk %}{% else %}{% url 'financeiro:detalhe_despesa' transacao.pk %}{% endif %}">
                                             <i class="bi bi-eye me-2"></i>Ver Detalhes
                                         </a>
                                     </li>

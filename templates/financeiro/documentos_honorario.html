@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+
+{% block title %}Documentos do Honorário - Plataforma Jurídica{% endblock %}
+
+{% block page_title %}Documentos do Honorário{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'financeiro:dashboard' %}">Financeiro</a></li>
+<li class="breadcrumb-item"><a href="{% url 'financeiro:honorarios' %}">Honorários</a></li>
+<li class="breadcrumb-item"><a href="{% url 'financeiro:honorario_detalhe' honorario.pk %}">{{ honorario.processo.numero_processo }}</a></li>
+<li class="breadcrumb-item active">Documentos</li>
+{% endblock %}
+
+{% block content %}
+<!-- Informações do Honorário -->
+<div class="card mb-4">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i class="bi bi-currency-dollar me-2"></i>
+                Honorário - {{ honorario.processo.numero_processo }}
+            </h6>
+            <span class="badge bg-primary">R$ {{ honorario.valor_total|floatformat:2 }}</span>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Cliente:</strong> {{ honorario.cliente.nome_razao_social }}</p>
+                <p><strong>Tipo:</strong> {{ honorario.get_tipo_cobranca_display }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Status:</strong> 
+                    <span class="badge bg-{% if honorario.status_pagamento == 'pago' %}success{% elif honorario.status_pagamento == 'parcial' %}info{% else %}warning{% endif %}">
+                        {{ honorario.get_status_pagamento_display }}
+                    </span>
+                </p>
+                <p><strong>Vencimento:</strong> {{ honorario.data_vencimento|date:"d/m/Y" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload de Documento -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0">
+            <i class="bi bi-cloud-upload me-2"></i>
+            Adicionar Documento
+        </h6>
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" id="uploadForm">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Título do Documento *</label>
+                        {{ form.titulo }}
+                        {% if form.titulo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.titulo.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Arquivo *</label>
+                        {{ form.arquivo }}
+                        {% if form.arquivo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.arquivo.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Formatos aceitos: PDF, DOC, DOCX, JPG, PNG (máx. 10MB)</div>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload me-2"></i>Enviar
+                    </button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        {{ form.descricao }}
+                        {% if form.descricao.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.descricao.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Documentos -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i class="bi bi-file-earmark-text me-2"></i>
+                Documentos Anexados ({{ documentos.count }})
+            </h6>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if documentos %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Documento</th>
+                            <th>Descrição</th>
+                            <th>Tamanho</th>
+                            <th>Data Upload</th>
+                            <th>Usuário</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for documento in documentos %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-{% if documento.arquivo.name|slice:'-4:' == '.pdf' %}file-earmark-pdf text-danger{% elif documento.arquivo.name|slice:'-4:' == '.doc' or documento.arquivo.name|slice:'-5:' == '.docx' %}file-earmark-word text-primary{% else %}file-earmark-image text-success{% endif %} me-2" style="font-size: 1.2rem;"></i>
+                                    <div>
+                                        <strong>{{ documento.titulo }}</strong>
+                                        <br><small class="text-muted">{{ documento.arquivo.name|slice:'20:' }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if documento.descricao %}
+                                    {{ documento.descricao|truncatechars:50 }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark">{{ documento.arquivo.size|filesizeformat }}</span>
+                            </td>
+                            <td>
+                                {{ documento.data_upload|date:"d/m/Y H:i" }}
+                            </td>
+                            <td>
+                                {{ documento.usuario.get_full_name|default:documento.usuario.username }}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'financeiro:download_documento_honorario' documento.pk %}" 
+                                       class="btn btn-outline-primary" title="Download">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    <button class="btn btn-outline-danger" 
+                                            onclick="excluirDocumento({{ documento.pk }})" 
+                                            title="Excluir">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-file-earmark-x text-muted" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-2">Nenhum documento anexado ainda.</p>
+                <p class="text-muted">Use o formulário acima para adicionar documentos.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function excluirDocumento(documentoId) {
+    if (confirm('Tem certeza que deseja excluir este documento? Esta ação não pode ser desfeita.')) {
+        fetch(`/financeiro/documentos/${documentoId}/excluir/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao excluir documento: ' + (data.error || 'Erro desconhecido'));
+            }
+        })
+        .catch(error => {
+            alert('Erro ao excluir documento: ' + error);
+        });
+    }
+}
+
+// Validação do formulário
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    const arquivo = document.querySelector('input[name="arquivo"]');
+    const titulo = document.querySelector('input[name="titulo"]');
+    
+    if (!arquivo.files.length) {
+        e.preventDefault();
+        alert('Por favor, selecione um arquivo.');
+        return;
+    }
+    
+    if (!titulo.value.trim()) {
+        e.preventDefault();
+        alert('Por favor, informe o título do documento.');
+        return;
+    }
+    
+    // Verificar tamanho do arquivo (10MB)
+    if (arquivo.files[0].size > 10 * 1024 * 1024) {
+        e.preventDefault();
+        alert('O arquivo deve ter no máximo 10MB.');
+        return;
+    }
+});
+</script>
+{% endblock %}

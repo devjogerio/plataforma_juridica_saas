@@ -1,8 +1,16 @@
 import uuid
+import os
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
+
+
+def upload_honorario_documento(instance, filename):
+    """
+    Função para definir o caminho de upload dos documentos de honorários
+    """
+    return f'honorarios/{instance.honorario.id}/documentos/{filename}'
 
 
 class Honorario(models.Model):
@@ -594,3 +602,119 @@ class ContaBancaria(models.Model):
         """Calcula o saldo atual da conta."""
         # Implementar cálculo baseado em movimentações
         return self.saldo_inicial
+
+
+class DocumentoHonorario(models.Model):
+    """
+    Modelo para armazenar documentos anexados aos honorários
+    """
+    
+    TIPO_DOCUMENTO_CHOICES = [
+        ('contrato', _('Contrato de Honorários')),
+        ('nota_fiscal', _('Nota Fiscal')),
+        ('recibo', _('Recibo')),
+        ('comprovante_pagamento', _('Comprovante de Pagamento')),
+        ('acordo', _('Acordo/Termo')),
+        ('correspondencia', _('Correspondência')),
+        ('outro', _('Outro')),
+    ]
+    
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        help_text=_('Identificador único do documento')
+    )
+    
+    honorario = models.ForeignKey(
+        Honorario,
+        on_delete=models.CASCADE,
+        related_name='documentos',
+        verbose_name=_('Honorário')
+    )
+    
+    nome_arquivo = models.CharField(
+        max_length=255,
+        verbose_name=_('Nome do Arquivo'),
+        help_text=_('Nome original do arquivo')
+    )
+    
+    arquivo = models.FileField(
+        upload_to=upload_honorario_documento,
+        verbose_name=_('Arquivo'),
+        help_text=_('Arquivo do documento (PDF, DOC, DOCX, JPG, PNG)')
+    )
+    
+    tipo_documento = models.CharField(
+        max_length=25,
+        choices=TIPO_DOCUMENTO_CHOICES,
+        verbose_name=_('Tipo de Documento')
+    )
+    
+    descricao = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_('Descrição'),
+        help_text=_('Descrição do conteúdo do documento')
+    )
+    
+    tamanho_arquivo = models.PositiveIntegerField(
+        verbose_name=_('Tamanho do Arquivo (bytes)'),
+        help_text=_('Tamanho do arquivo em bytes')
+    )
+    
+    usuario_upload = models.ForeignKey(
+        'usuarios.Usuario',
+        on_delete=models.PROTECT,
+        verbose_name=_('Usuário que fez o Upload')
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Data de Upload')
+    )
+    
+    class Meta:
+        verbose_name = _('Documento de Honorário')
+        verbose_name_plural = _('Documentos de Honorários')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['honorario', '-created_at']),
+            models.Index(fields=['tipo_documento']),
+        ]
+    
+    def __str__(self):
+        return f"{self.nome_arquivo} - {self.honorario}"
+    
+    def save(self, *args, **kwargs):
+        if self.arquivo:
+            self.tamanho_arquivo = self.arquivo.size
+            if not self.nome_arquivo:
+                self.nome_arquivo = os.path.basename(self.arquivo.name)
+        super().save(*args, **kwargs)
+    
+    @property
+    def tamanho_formatado(self):
+        """Retorna o tamanho do arquivo formatado em KB/MB"""
+        if self.tamanho_arquivo < 1024:
+            return f"{self.tamanho_arquivo} bytes"
+        elif self.tamanho_arquivo < 1024 * 1024:
+            return f"{self.tamanho_arquivo / 1024:.1f} KB"
+        else:
+            return f"{self.tamanho_arquivo / (1024 * 1024):.1f} MB"
+    
+    @property
+    def extensao_arquivo(self):
+        """Retorna a extensão do arquivo"""
+        return os.path.splitext(self.nome_arquivo)[1].lower()
+    
+    @property
+    def is_imagem(self):
+        """Verifica se o arquivo é uma imagem"""
+        extensoes_imagem = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+        return self.extensao_arquivo in extensoes_imagem
+    
+    @property
+    def is_pdf(self):
+        """Verifica se o arquivo é um PDF"""
+        return self.extensao_arquivo == '.pdf'

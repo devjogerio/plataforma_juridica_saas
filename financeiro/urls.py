@@ -13,8 +13,15 @@ urlpatterns = [
     # Honorários
     path('honorarios/', views.HonorarioListView.as_view(), name='honorarios'),
     path('honorarios/novo/', views.HonorarioCreateView.as_view(), name='criar_honorario'),
-    path('honorarios/<uuid:pk>/', views.HonorarioDetailView.as_view(), name='detalhe_honorario'),
-    path('honorarios/<uuid:pk>/editar/', views.HonorarioUpdateView.as_view(), name='editar_honorario'),
+    path('honorarios/primeiro/', views.HonorarioPrimeiroCreateView.as_view(), name='primeiro_honorario'),
+    path('honorarios/<uuid:pk>/', views.HonorarioDetailView.as_view(), name='honorario_detalhe'),
+    path('honorarios/<uuid:pk>/editar/', views.HonorarioUpdateView.as_view(), name='honorario_editar'),
+    
+    # URLs para documentos de honorários
+    path('honorarios/<uuid:honorario_pk>/documentos/upload/', views.upload_documento_honorario, name='upload_documento'),
+    path('honorarios/<uuid:honorario_pk>/documentos/listar/', views.listar_documentos_honorario, name='listar_documentos'),
+    path('documentos/<uuid:documento_pk>/download/', views.download_documento_honorario, name='download_documento'),
+    path('documentos/<uuid:documento_pk>/excluir/', views.excluir_documento_honorario, name='excluir_documento'),
     
     # Parcelas de Honorários
     path('parcelas/<uuid:pk>/pagar/', views.marcar_parcela_paga, name='marcar_parcela_paga'),

@@ -8,10 +8,7 @@ para o ambiente de desenvolvimento.
 from .base import *
 import os
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+# DEBUG e ALLOWED_HOSTS são configurados no base.py através do arquivo .env
 
 # Database - Use SQLite for development
 DATABASES = {

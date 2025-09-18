@@ -10,8 +10,8 @@
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="card border-left-primary shadow h-100 py-2">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
+                <div class="row g-0 align-items-center">
+                    <div class="col me-2">
                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                             Total de Processos
                         </div>
@@ -28,8 +28,8 @@
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="card border-left-success shadow h-100 py-2">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
+                <div class="row g-0 align-items-center">
+                    <div class="col me-2">
                         <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                             Processos Ativos
                         </div>
@@ -46,8 +46,8 @@
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="card border-left-info shadow h-100 py-2">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
+                <div class="row g-0 align-items-center">
+                    <div class="col me-2">
                         <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                             Processos Este Mês
                         </div>
@@ -64,8 +64,8 @@
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="card border-left-warning shadow h-100 py-2">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
+                <div class="row g-0 align-items-center">
+                    <div class="col me-2">
                         <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                             Total de Clientes
                         </div>
@@ -246,68 +246,93 @@
 
 {% block extra_js %}
 <script>
-// Gráfico de Processos por Status
-const statusCtx = document.getElementById('statusChart').getContext('2d');
-const statusData = {{ processos_por_status|safe }};
+// Aguarda o DOM estar carregado
+document.addEventListener('DOMContentLoaded', function() {
+    // Verifica se o Chart.js está disponível
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js não foi carregado');
+        return;
+    }
 
-const statusChart = new Chart(statusCtx, {
-    type: 'doughnut',
-    data: {
-        labels: statusData.map(item => item.status.charAt(0).toUpperCase() + item.status.slice(1)),
-        datasets: [{
-            data: statusData.map(item => item.count),
-            backgroundColor: [
-                'var(--success-color)',
-                'var(--warning-color)',
-                'var(--danger-color)',
-                'var(--primary-color)',
-                '#6c757d'
-            ],
-            borderWidth: 0
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'bottom'
-            }
+    // Gráfico de Processos por Status
+    const statusChartElement = document.getElementById('statusChart');
+    if (statusChartElement) {
+        const statusCtx = statusChartElement.getContext('2d');
+        const statusData = {{ processos_por_status|safe }};
+
+        if (statusData && statusData.length > 0) {
+            const statusChart = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: statusData.map(item => item.status.charAt(0).toUpperCase() + item.status.slice(1)),
+                    datasets: [{
+                        data: statusData.map(item => item.count),
+                        backgroundColor: [
+                            'var(--success-color)',
+                            'var(--warning-color)',
+                            'var(--danger-color)',
+                            'var(--primary-color)',
+                            '#6c757d'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        } else {
+            statusChartElement.style.display = 'none';
+            statusChartElement.parentElement.innerHTML = '<p class="text-center text-muted">Nenhum dado disponível</p>';
         }
     }
-});
 
-// Gráfico de Processos por Área
-const areaCtx = document.getElementById('areaChart').getContext('2d');
-const areaData = {{ processos_por_area|safe }};
+    // Gráfico de Processos por Área
+    const areaChartElement = document.getElementById('areaChart');
+    if (areaChartElement) {
+        const areaCtx = areaChartElement.getContext('2d');
+        const areaData = {{ processos_por_area|safe }};
 
-const areaChart = new Chart(areaCtx, {
-    type: 'bar',
-    data: {
-        labels: areaData.map(item => item.area_direito),
-        datasets: [{
-            label: 'Processos',
-            data: areaData.map(item => item.count),
-            backgroundColor: 'var(--primary-color)',
-            borderColor: 'var(--primary-color)',
-            borderWidth: 1
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    stepSize: 1
+        if (areaData && areaData.length > 0) {
+            const areaChart = new Chart(areaCtx, {
+                type: 'bar',
+                data: {
+                    labels: areaData.map(item => item.area_direito || 'Não definido'),
+                    datasets: [{
+                        label: 'Processos',
+                        data: areaData.map(item => item.count),
+                        backgroundColor: 'var(--primary-color)',
+                        borderColor: 'var(--primary-color)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
                 }
-            }
-        },
-        plugins: {
-            legend: {
-                display: false
-            }
+            });
+        } else {
+            areaChartElement.style.display = 'none';
+            areaChartElement.parentElement.innerHTML = '<p class="text-center text-muted">Nenhum dado disponível</p>';
         }
     }
 });

@@ -468,7 +468,7 @@
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
-                                                <a href="{% url 'financeiro:detalhe_honorario' honorario.pk %}" 
+                                                <a href="{% url 'financeiro:honorario_detalhe' honorario.pk %}" 
                                                    class="btn btn-outline-primary" title="Ver Detalhes">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
@@ -559,7 +559,7 @@
 {% block extra_js %}
 <script>
 function novoProcesso() {
-    window.location.href = `/processos/create/?cliente={{ cliente.pk }}`;
+    window.location.href = `/processos/novo/?cliente={{ cliente.pk }}`;
 }
 
 function confirmarExclusao() {
