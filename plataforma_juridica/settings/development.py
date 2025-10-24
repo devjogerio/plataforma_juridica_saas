@@ -68,9 +68,13 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Cache simples para desenvolvimento
 if os.environ.get('USE_DUMMY_CACHE', 'False').lower() == 'true':
+    # Usar cache em memória local para evitar dependência de Redis
     CACHES = {
         'default': {
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        },
+        'sessions': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         }
     }
 
