@@ -187,11 +187,13 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle'
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/hour',
-        'user': '1000/hour'
+        'user': '1000/hour',
+        'drafts': f"{env.int('CHECKPOINT_RATE_LIMIT_PER_MINUTE', default=10)}/minute",
     }
 }
 
@@ -315,3 +317,9 @@ LOGGING = {
         },
     },
 }
+
+# Checkpoints/Autosave
+CHECKPOINT_TTL_SECONDS = env.int('CHECKPOINT_TTL_SECONDS', default=1200)
+AUTOSAVE_DEBOUNCE_MS = env.int('AUTOSAVE_DEBOUNCE_MS', default=1500)
+CHECKPOINT_MAX_PAYLOAD_KB = env.int('CHECKPOINT_MAX_PAYLOAD_KB', default=128)
+CHECKPOINT_RATE_LIMIT_PER_MINUTE = env.int('CHECKPOINT_RATE_LIMIT_PER_MINUTE', default=10)

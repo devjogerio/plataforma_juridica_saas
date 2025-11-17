@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ filtro.nome }} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Cabeçalho -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">{{ filtro.nome }}</h1>
+                    {% if filtro.descricao %}
+                        <p class="text-muted mb-0">{{ filtro.descricao }}</p>
+                    {% endif %}
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'relatorios:testar_filtro' filtro.pk %}" class="btn btn-primary">
+                        <i class="fas fa-play"></i> {% trans 'Testar Filtro' %}
+                    </a>
+                    {% if filtro.usuario_criador == request.user %}
+                        <a href="{% url 'relatorios:editar_filtro' filtro.pk %}" class="btn btn-outline-warning">
+                            <i class="fas fa-edit"></i> {% trans 'Editar' %}
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'relatorios:lista_filtros' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> {% trans 'Voltar' %}
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Informações do Filtro -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans 'Informações do Filtro' %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong>{% trans 'Tipo de Entidade:' %}</strong>
+                                <span class="badge bg-info ms-2">{{ filtro.get_tipo_display }}</span>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>{% trans 'Criado por:' %}</strong>
+                                <span class="ms-2">
+                                    {{ filtro.usuario_criador.get_full_name|default:filtro.usuario_criador.username }}
+                                </span>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>{% trans 'Data de Criação:' %}</strong>
+                                <span class="ms-2">{{ filtro.data_criacao|date:'d/m/Y H:i' }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong>{% trans 'Status:' %}</strong>
+                                {% if filtro.ativo %}
+                                    <span class="badge bg-success ms-2">{% trans 'Ativo' %}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary ms-2">{% trans 'Inativo' %}</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>{% trans 'Compartilhado:' %}</strong>
+                                {% if filtro.compartilhado %}
+                                    <span class="badge bg-primary ms-2">{% trans 'Sim' %}</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark ms-2">{% trans 'Não' %}</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>{% trans 'Filtro Padrão:' %}</strong>
+                                {% if filtro.padrao %}
+                                    <span class="badge bg-warning text-dark ms-2">{% trans 'Sim' %}</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark ms-2">{% trans 'Não' %}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Configuração do Filtro -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans 'Configuração do Filtro' %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if configuracao_formatada %}
+                        <pre class="bg-light p-3 border rounded" style="max-height: 400px; overflow: auto;">
+{{ configuracao_formatada }}
+                        </pre>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            {% trans 'Configuração do filtro não disponível ou inválida.' %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar com Estatísticas -->
+        <div class="col-lg-4">
+            <!-- Estatísticas de Uso -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans 'Estatísticas de Uso' %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-chart-bar fa-2x text-primary"></i>
+                        </div>
+                        <p class="text-muted">
+                            {% trans 'Estatísticas de uso em desenvolvimento...' %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Ações Rápidas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans 'Ações Rápidas' %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'relatorios:testar_filtro' filtro.pk %}" class="btn btn-outline-primary">
+                            <i class="fas fa-play"></i> {% trans 'Testar Este Filtro' %}
+                        </a>
+                        
+                        {% if filtro.usuario_criador == request.user %}
+                            <a href="{% url 'relatorios:editar_filtro' filtro.pk %}" class="btn btn-outline-warning">
+                                <i class="fas fa-edit"></i> {% trans 'Editar Filtro' %}
+                            </a>
+                            
+                            <button type="button" class="btn btn-outline-danger" 
+                                    data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                <i class="fas fa-trash"></i> {% trans 'Excluir Filtro' %}
+                            </button>
+                        {% endif %}
+                        
+                        <a href="{% url 'relatorios:executar_relatorio' %}?filtro={{ filtro.pk }}" 
+                           class="btn btn-outline-info">
+                            <i class="fas fa-file-export"></i> {% trans 'Executar Relatório' %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+{% if filtro.usuario_criador == request.user %}
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{% trans 'Confirmar Exclusão' %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>{% trans 'Tem certeza que deseja excluir o filtro' %} <strong>"{{ filtro.nome }}"</strong>?</p>
+                    <p class="text-danger">
+                        <small>{% trans 'Esta ação não pode ser desfeita.' %}</small>
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        {% trans 'Cancelar' %}
+                    </button>
+                    <form method="post" action="{% url 'relatorios:excluir_filtro' filtro.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            {% trans 'Excluir' %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Filtros Avançados - {{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">Filtros Avançados - {{ titulo }}</h3>
+                    <div class="card-tools">
+                        <a href="{% url 'relatorios:dashboard' %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Formulário de Filtros -->
+                    <form method="get" id="filtroForm">
+                        <div class="row">
+                            {% for field in filter.form %}
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label">
+                                    {{ field.label }}
+                                </label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="text-danger small">
+                                        {{ field.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i> Aplicar Filtros
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="limparFiltros()">
+                                    <i class="fas fa-eraser"></i> Limpar
+                                </button>
+                                
+                                {% if filtros_salvos %}
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
+                                        <i class="fas fa-bookmark"></i> Filtros Salvos
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% for filtro in filtros_salvos %}
+                                        <li>
+                                            <a class="dropdown-item" href="?aplicar_filtro={{ filtro.id }}">
+                                                {{ filtro.nome }}
+                                                {% if not filtro.is_public %}
+                                                    <small class="text-muted">(privado)</small>
+                                                {% endif %}
+                                            </a>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                                
+                                <button type="button" class="btn btn-success" onclick="salvarFiltro()">
+                                    <i class="fas fa-save"></i> Salvar Filtro
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <!-- Resultados -->
+                    {% if object_list %}
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5>Resultados ({{ object_list|length }} registros)</h5>
+                            <div>
+                                <a href="?exportar=excel" class="btn btn-outline-success btn-sm">
+                                    <i class="fas fa-file-excel"></i> Exportar Excel
+                                </a>
+                                <a href="?exportar=csv" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-file-csv"></i> Exportar CSV
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        {% for field in campos_exibicao %}
+                                        <th>{{ field|title }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for obj in object_list %}
+                                    <tr>
+                                        {% for campo in campos_exibicao %}
+                                        <td>{{ obj|get_attr:campo|default:"-" }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        {% if is_paginated %}
+                        <nav aria-label="Paginação">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Anterior</a>
+                                </li>
+                                {% endif %}
+                                
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+                                
+                                {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Próxima</a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    </div>
+                    {% elif request.GET %}
+                    <div class="alert alert-info mt-4">
+                        <i class="fas fa-info-circle"></i> Nenhum registro encontrado com os filtros aplicados.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para salvar filtro -->
+<div class="modal fade" id="salvarFiltroModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Salvar Filtro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'relatorios:salvar_filtro' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nome_filtro" class="form-label">Nome do Filtro</label>
+                        <input type="text" class="form-control" id="nome_filtro" name="nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="filtro_publico" name="is_public">
+                            <label class="form-check-label" for="filtro_publico">
+                                Tornar filtro público (visível para todos os usuários)
+                            </label>
+                        </div>
+                    </div>
+                    <input type="hidden" name="entity_type" value="{{ entity_type }}">
+                    <input type="hidden" name="parametros" id="parametrosFiltro">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function limparFiltros() {
+    document.getElementById('filtroForm').reset();
+    window.location.href = window.location.pathname;
+}
+
+function salvarFiltro() {
+    // Coleta todos os parâmetros da URL
+    const params = new URLSearchParams(window.location.search);
+    document.getElementById('parametrosFiltro').value = params.toString();
+    
+    // Abre o modal
+    const modal = new bootstrap.Modal(document.getElementById('salvarFiltroModal'));
+    modal.show();
+}
+
+// Template filter para acessar atributos dinamicamente
+function getAttr(obj, attr) {
+    const attrs = attr.split('.');
+    let value = obj;
+    for (let a of attrs) {
+        value = value[a];
+        if (value === undefined || value === null) break;
+    }
+    return value;
+}
+
+// Registra o filtro customizado
+if (typeof django !== 'undefined') {
+    django.jQuery = $;
+}
+</script>
+{% endblock %}

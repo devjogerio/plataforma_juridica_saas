@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load static %}
+
+{# Template: Execução de Relatório com base em TemplateRelatorio
+   GET: Exibe informações do template e seleção de filtro/formato.
+   POST: Envia para execução, redireciona para resultado.
+   Context: template (TemplateRelatorio), filtros (QuerySet de FiltroSalvo), formatos disponíveis. #}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="h4 mb-3">Executar Relatório: {{ template.nome }}</h1>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h2 class="h6">Configuração</h2>
+      <dl class="row mb-0">
+        <dt class="col-sm-3">Entidade</dt><dd class="col-sm-9">{{ template.get_tipo_entidade_display|default:template.tipo_entidade }}</dd>
+        <dt class="col-sm-3">Campos selecionados</dt><dd class="col-sm-9">{{ template.colunas_selecionadas|default:template.selected_fields|default:"(não informado)" }}</dd>
+      </dl>
+    </div>
+  </div>
+
+  <form method="post" class="card">
+    <div class="card-body">
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Filtro salvo (opcional)</label>
+          <select name="filtro_id" class="form-select">
+            <option value="">Sem filtro</option>
+            {% for f in filtros %}
+              <option value="{{ f.id }}">{{ f.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Formato</label>
+          <select name="formato" class="form-select" required>
+            <option value="pdf">PDF</option>
+            <option value="excel">Excel</option>
+            <option value="csv">CSV</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer d-flex gap-2">
+      <button type="submit" class="btn btn-success">Executar</button>
+      <a href="{% url 'relatorios:templates' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

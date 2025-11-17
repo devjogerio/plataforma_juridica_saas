@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{# Template: Exportação de relatório executado
+   Context: execucao (ExecucaoRelatorio), form (ExportarRelatorioForm) #}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="h4 mb-3">Exportar: {{ execucao.template.nome }}</h1>
+  <p class="text-muted">Executado em {{ execucao.data_execucao|date:"d/m/Y H:i" }} — {{ execucao.total_registros }} registro(s)</p>
+
+  <form method="post" class="card">
+    {% csrf_token %}
+    <div class="card-body">
+      {{ form.as_p }}
+    </div>
+    <div class="card-footer d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Baixar</button>
+      <a href="{% url 'relatorios:templates' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

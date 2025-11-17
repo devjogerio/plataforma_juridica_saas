@@ -1,0 +1,340 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ titulo }} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{{ titulo }}</h5>
+                </div>
+                
+                <div class="card-body">
+                    <form method="post" id="filtroForm">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <!-- Informações Básicas -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.nome.id_for_label }}" class="form-label">
+                                        {% trans 'Nome do Filtro' %} *
+                                    </label>
+                                    {{ form.nome }}
+                                    {% if form.nome.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.nome.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.tipo.id_for_label }}" class="form-label">
+                                        {% trans 'Tipo de Entidade' %} *
+                                    </label>
+                                    {{ form.tipo }}
+                                    {% if form.tipo.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.tipo.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.descricao.id_for_label }}" class="form-label">
+                                {% trans 'Descrição' %}
+                            </label>
+                            {{ form.descricao }}
+                            {% if form.descricao.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.descricao.errors }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                {% trans 'Descreva o propósito deste filtro' %}
+                            </div>
+                        </div>
+                        
+                        <!-- Configuração do Filtro -->
+                        <div class="mb-4">
+                            <label class="form-label">{% trans 'Configuração do Filtro' %} *</label>
+                            <div class="card">
+                                <div class="card-header">
+                                    <ul class="nav nav-tabs card-header-tabs" id="filtroTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" id="visual-tab" data-bs-toggle="tab" 
+                                                    data-bs-target="#visual" type="button" role="tab">
+                                                {% trans 'Editor Visual' %}
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="json-tab" data-bs-toggle="tab" 
+                                                    data-bs-target="#json" type="button" role="tab">
+                                                {% trans 'JSON Avançado' %}
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="card-body">
+                                    <div class="tab-content" id="filtroTabContent">
+                                        <!-- Editor Visual -->
+                                        <div class="tab-pane fade show active" id="visual" role="tabpanel">
+                                            <div id="editorVisual">
+                                                <div class="text-center py-4">
+                                                    <p class="text-muted">{% trans 'Carregando editor visual...' %}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Editor JSON -->
+                                        <div class="tab-pane fade" id="json" role="tabpanel">
+                                            <label for="configuracaoJson" class="form-label">
+                                                {% trans 'Configuração JSON' %}
+                                            </label>
+                                            <textarea class="form-control font-monospace" id="configuracaoJson" 
+                                                      name="configuracao" rows="12" 
+                                                      placeholder='{"operator": "AND", "conditions": []}'>
+                                                {{ form.configuracao.value|default:'' }}
+                                            </textarea>
+                                            {% if form.configuracao.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.configuracao.errors }}
+                                                </div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                {% trans 'Digite a configuração do filtro no formato JSON válido' %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Opções Adicionais -->
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.ativo }}
+                                    <label class="form-check-label" for="{{ form.ativo.id_for_label }}">
+                                        {% trans 'Filtro Ativo' %}
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.compartilhado }}
+                                    <label class="form-check-label" for="{{ form.compartilhado.id_for_label }}">
+                                        {% trans 'Compartilhar com a Equipe' %}
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.padrao }}
+                                    <label class="form-check-label" for="{{ form.padrao.id_for_label }}">
+                                        {% trans 'Filtro Padrão' %}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Botões de Ação -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <a href="{% url 'relatorios:lista_filtros' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> {% trans 'Voltar' %}
+                                </a>
+                            </div>
+                            
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-outline-info" id="btnTestar">
+                                    <i class="fas fa-play"></i> {% trans 'Testar Filtro' %}
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> {% trans 'Salvar Filtro' %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Teste -->
+<div class="modal fade" id="testeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{% trans 'Testar Filtro' %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="testeResultado">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">{% trans 'Testando...' %}</span>
+                        </div>
+                        <p class="mt-2">{% trans 'Testando configuração do filtro...' %}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% trans 'Fechar' %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', function() {
+        const tipoSelect = document.getElementById('{{ form.tipo.id_for_label }}');
+        const jsonTextarea = document.getElementById('configuracaoJson');
+        
+        // Atualizar campos disponíveis quando o tipo mudar
+        tipoSelect.addEventListener('change', function() {
+            atualizarCamposDisponiveis(this.value);
+        });
+        
+        // Testar filtro
+        document.getElementById('btnTestar').addEventListener('click', function() {
+            testarFiltro();
+        });
+        
+        // Validação do JSON
+        jsonTextarea.addEventListener('blur', function() {
+            validarJSON(this.value);
+        });
+    });
+    
+    function atualizarCamposDisponiveis(tipo) {
+        if (!tipo) return;
+        
+        fetch(`{% url 'relatorios:api_campos_filtro' %}?tipo=${tipo}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Campos disponíveis:', data.campos);
+                // TODO: Implementar atualização do editor visual
+            })
+            .catch(error => {
+                console.error('Erro ao carregar campos:', error);
+            });
+    }
+    
+    function testarFiltro() {
+        const configuracao = document.getElementById('configuracaoJson').value;
+        const tipo = document.getElementById('{{ form.tipo.id_for_label }}').value;
+        
+        if (!configuracao || !tipo) {
+            alert('{% trans 'Preencha a configuração e selecione o tipo de entidade' %}');
+            return;
+        }
+        
+        // Validar JSON primeiro
+        if (!validarJSON(configuracao)) {
+            return;
+        }
+        
+        // Mostrar modal de teste
+        const modal = new bootstrap.Modal(document.getElementById('testeModal'));
+        modal.show();
+        
+        // Enviar requisição de teste
+        fetch('{% url 'relatorios:api_testar_filtro %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                tipo: tipo,
+                configuracao: JSON.parse(configuracao)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            const resultadoDiv = document.getElementById('testeResultado');
+            
+            if (data.sucesso) {
+                resultadoDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <h6>{% trans 'Teste Concluído com Sucesso!' %}</h6>
+                        <p>{% trans 'Total de registros encontrados:' %} <strong>${data.total_registros}</strong></p>
+                    </div>
+                    
+                    ${data.total_registros > 0 ? `
+                        <h6>{% trans 'Amostra de Registros:' %}</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>{% trans 'Nome/Número' %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.amostra_registros.map(reg => `
+                                        <tr>
+                                            <td>${reg.id}</td>
+                                            <td>${reg.numero_processo || reg.nome_razao_social || 'N/A'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    ` : ''}
+                `;
+            } else {
+                resultadoDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h6>{% trans 'Erro no Teste' %}</h6>
+                        <p>${data.erro || '{% trans 'Erro desconhecido' %}'}</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            document.getElementById('testeResultado').innerHTML = `
+                <div class="alert alert-danger">
+                    <h6>{% trans 'Erro de Conexão' %}</h6>
+                    <p>{% trans 'Não foi possível conectar ao servidor' %}</p>
+                </div>
+            `;
+        });
+    }
+    
+    function validarJSON(jsonString) {
+        try {
+            JSON.parse(jsonString);
+            return true;
+        } catch (error) {
+            alert('{% trans 'JSON inválido. Por favor, verifique a sintaxe.' %}');
+            return false;
+        }
+    }
+</script>
+{% endblock %}

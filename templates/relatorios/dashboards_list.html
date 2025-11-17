@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{# Template: Listagem de Dashboards Personalizados
+   Context: dashboards (QuerySet paginado) #}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4">Dashboards</h1>
+    <a href="{% url 'relatorios:dashboard_create' %}" class="btn btn-primary">Novo Dashboard</a>
+  </div>
+
+  {% if dashboards %}
+    <ul class="list-group">
+      {% for d in dashboards %}
+        <li class="list-group-item d-flex justify-content-between">
+          <div>
+            <strong>{{ d.nome }}</strong>
+            <div class="text-muted small">Atualizado: {{ d.updated_at|date:"d/m/Y H:i" }}</div>
+          </div>
+          <a href="{% url 'relatorios:dashboard' d.pk %}" class="btn btn-outline-secondary btn-sm">Abrir</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="alert alert-info">Nenhum dashboard cadastrado.</div>
+  {% endif %}
+</div>
+{% endblock %}

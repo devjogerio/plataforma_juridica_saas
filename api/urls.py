@@ -1,7 +1,8 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -31,8 +32,9 @@ router.register(r'usuarios', UsuarioViewSet)
 # router.register(r'relatorios', RelatorioViewSet)
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def api_status(request):
-    """Endpoint para verificar status da API"""
+    """Endpoint público de health-check da API"""
     return Response({
         'status': 'API funcionando',
         'version': '1.0.0',
@@ -56,8 +58,7 @@ urlpatterns = [
     path('status/', api_status, name='api_status'),
     
     # Endpoints customizados
-    # path('dashboard/', include('core.api_urls')),  # Dashboard geral - TODO: implementar
-    # path('relatorios/', include('relatorios.api_urls')),  # Relatórios customizados - TODO: implementar
+    path('forms/', include('core.api_urls')),
     
     # ViewSets registrados no router
     path('', include(router.urls)),

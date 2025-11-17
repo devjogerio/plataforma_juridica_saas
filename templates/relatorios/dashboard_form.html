@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{# Template: Formulário de DashboardPersonalizado
+   Context: form (DashboardPersonalizadoForm) #}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="h4 mb-3">{{ form.instance.pk|yesno:"Editar Dashboard,Novo Dashboard" }}</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="mt-3 d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Salvar</button>
+      <a href="{% url 'relatorios:dashboards' %}" class="btn btn-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

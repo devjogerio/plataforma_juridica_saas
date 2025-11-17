@@ -42,7 +42,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                <form method="post" novalidate>
+                <form method="post" novalidate id="processo-form" data-form-slug="processos_form" data-object-id="{{ object.pk|default:'' }}">
                     {% csrf_token %}
                     
                     <!-- Informações Básicas -->
@@ -555,6 +555,68 @@ document.querySelector('form').addEventListener('submit', function(e) {
         e.preventDefault();
         alert('Por favor, preencha todos os campos obrigatórios.');
     }
+});
+</script>
+<script>
+// Autosave e retomada de formulário de processos
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('processo-form');
+  if (!form) return;
+  const formSlug = form.getAttribute('data-form-slug');
+  const objectId = form.getAttribute('data-object-id') || '';
+  const csrf = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+  let timer = null;
+
+  function collectData() {
+    const fields = form.querySelectorAll('input, select, textarea');
+    const data = {};
+    fields.forEach(el => {
+      if (el.name && el.name !== 'csrfmiddlewaretoken') {
+        data[el.name] = el.type === 'checkbox' ? el.checked : el.value;
+      }
+    });
+    return { data, step: 1, schemaVersion: 1 };
+  }
+
+  function saveDraft() {
+    const payload = collectData();
+    fetch('/api/v1/forms/drafts/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrf
+      },
+      body: JSON.stringify({ form_slug: formSlug, object_id: objectId, payload })
+    }).catch(() => {});
+  }
+
+  function scheduleSave() {
+    if (timer) clearTimeout(timer);
+    const debounceMs = 1500;
+    timer = setTimeout(saveDraft, debounceMs);
+  }
+
+  function applyPayload(payload) {
+    if (!payload || !payload.data) return;
+    Object.entries(payload.data).forEach(([name, value]) => {
+      const field = form.querySelector(`[name="${name}"]`);
+      if (field) {
+        if (field.type === 'checkbox') field.checked = !!value; else field.value = value;
+      }
+    });
+    const notice = document.createElement('div');
+    notice.className = 'alert alert-info mt-2';
+    notice.textContent = 'Rascunho restaurado. Continue de onde parou.';
+    form.parentElement.insertBefore(notice, form);
+  }
+
+  fetch(`/api/v1/forms/drafts/load?form_slug=${encodeURIComponent(formSlug)}&object_id=${encodeURIComponent(objectId)}`)
+    .then(r => r.status === 200 ? r.json() : null)
+    .then(j => { if (j && j.ok) applyPayload(j.payload); })
+    .catch(() => {});
+
+  form.addEventListener('input', scheduleSave);
+  form.addEventListener('blur', scheduleSave, true);
 });
 </script>
 {% endblock %}

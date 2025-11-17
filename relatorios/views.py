@@ -651,11 +651,11 @@ class TemplateRelatorioListView(LoginRequiredMixin, ListView):
     
     def get_queryset(self):
         if self.request.user.is_staff:
-            return TemplateRelatorio.objects.all().order_by('-data_criacao')
+            return TemplateRelatorio.objects.all().order_by('-created_at')
         else:
             return TemplateRelatorio.objects.filter(
                 Q(usuario_criador=self.request.user) | Q(publico=True)
-            ).order_by('-data_criacao')
+            ).order_by('-created_at')
 
 
 class TemplateRelatorioCreateView(LoginRequiredMixin, CreateView):
@@ -1211,3 +1211,150 @@ def _exportar_csv(execucao, dados, opcoes):
             writer.writerow(row)
     
     return response
+
+# Filtros Avançados
+from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
+from django.urls import reverse_lazy
+
+
+class ListaFiltrosView(LoginRequiredMixin, ListView):
+    model = FiltroSalvo
+    template_name = 'relatorios/filtros/lista.html'
+    context_object_name = 'filtros'
+
+    def get_queryset(self):
+        return FiltroSalvo.objects.filter(usuario=self.request.user).order_by('-created_at')
+
+
+class CriarFiltroView(LoginRequiredMixin, CreateView):
+    model = FiltroSalvo
+    form_class = FiltroSalvoForm
+    template_name = 'relatorios/filtros/form.html'
+    success_url = reverse_lazy('relatorios:lista_filtros')
+
+    def form_valid(self, form):
+        form.instance.usuario = self.request.user
+        messages.success(self.request, 'Filtro salvo criado com sucesso!')
+        return super().form_valid(form)
+
+
+class EditarFiltroView(LoginRequiredMixin, UpdateView):
+    model = FiltroSalvo
+    form_class = FiltroSalvoForm
+    template_name = 'relatorios/filtros/form.html'
+    success_url = reverse_lazy('relatorios:lista_filtros')
+
+    def get_queryset(self):
+        return FiltroSalvo.objects.filter(usuario=self.request.user)
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Filtro salvo atualizado com sucesso!')
+        return super().form_valid(form)
+
+
+class VisualizarFiltroView(LoginRequiredMixin, DetailView):
+    model = FiltroSalvo
+    template_name = 'relatorios/filtros/detalhe.html'
+    context_object_name = 'filtro'
+
+    def get_queryset(self):
+        return FiltroSalvo.objects.filter(usuario=self.request.user)
+
+
+class TestarFiltroView(LoginRequiredMixin, TemplateView):
+    template_name = 'relatorios/filtros/testar.html'
+
+
+class ExcluirFiltroView(LoginRequiredMixin, DeleteView):
+    model = FiltroSalvo
+    template_name = 'relatorios/filtros/confirmar_exclusao.html'
+    success_url = reverse_lazy('relatorios:lista_filtros')
+
+    def get_queryset(self):
+        return FiltroSalvo.objects.filter(usuario=self.request.user)
+
+
+# Aliases para Templates
+class ListaTemplatesView(TemplateRelatorioListView):
+    pass
+
+
+class CriarTemplateView(TemplateRelatorioCreateView):
+    pass
+
+
+class EditarTemplateView(TemplateRelatorioUpdateView):
+    pass
+
+
+class ExecutarRelatorioView(TemplateView):
+    template_name = 'relatorios/executar.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from .forms import FiltroRelatorioForm
+        from .models import TemplateRelatorio
+        templates = TemplateRelatorio.objects.filter(ativo=True)
+        context['templates'] = templates
+        context['form'] = FiltroRelatorioForm(self.request.GET or None, user=self.request.user, tipo_relatorio='processos')
+        return context
+
+    def post(self, request, *args, **kwargs):
+        from django.shortcuts import render, redirect, get_object_or_404
+        from django.contrib import messages
+        from .forms import FiltroRelatorioForm
+        from .models import TemplateRelatorio
+        from .services import executar_relatorio_service
+
+        template_id = request.POST.get('template_id')
+        template = get_object_or_404(TemplateRelatorio, id=template_id)
+
+        form = FiltroRelatorioForm(request.POST, user=request.user, tipo_relatorio=template.tipo)
+        if not form.is_valid():
+            messages.error(request, 'Parâmetros inválidos para execução do relatório.')
+            return self.get(request, *args, **kwargs)
+
+        try:
+            execucao, dados = executar_relatorio_service(template, request.user, form.cleaned_data)
+            context = {
+                'template': template,
+                'execucao': execucao,
+                'dados': dados,
+                'form': form,
+            }
+            return render(request, 'relatorios/resultado.html', context)
+        except Exception as e:
+            messages.error(request, f'Erro ao executar relatório: {str(e)}')
+            return redirect('relatorios:dashboard')
+
+
+class ListaExecucoesView(LoginRequiredMixin, ListView):
+    model = ExecucaoRelatorio
+    template_name = 'relatorios/execucoes/resultado.html'
+    context_object_name = 'execucoes'
+
+    def get_queryset(self):
+        return ExecucaoRelatorio.objects.filter(usuario=self.request.user).order_by('-data_execucao')
+
+
+# APIs de Filtros
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+
+
+class APIObterCamposFiltroView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        return Response({'ok': True, 'campos': ['numero_processo', 'cliente', 'status']}, status=status.HTTP_200_OK)
+
+
+class APITestarConfiguracaoFiltroView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        return Response({'ok': True, 'resultado': {'total': 0}}, status=status.HTTP_200_OK)

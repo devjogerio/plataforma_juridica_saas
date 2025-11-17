@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{# Template: Resultado da execução do relatório
+   Context: execucao (ExecucaoRelatorio), dados (dict com registros e estatísticas), template (TemplateRelatorio) #}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="h4 mb-3">Resultado: {{ template.nome }}</h1>
+
+  <div class="mb-3">
+    <span class="badge bg-info">Registros: {{ execucao.total_registros }}</span>
+    <span class="badge bg-secondary">Executado em: {{ execucao.data_execucao|date:"d/m/Y H:i" }}</span>
+  </div>
+
+  {% if dados.registros %}
+    <div class="table-responsive">
+      <table class="table table-sm table-striped">
+        <thead>
+          <tr>
+            {% for h in dados.registros.0.keys %}
+              <th>{{ h }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in dados.registros|slice:":50" %}
+            <tr>
+              {% for h in r.keys %}
+                <td>{{ r|get_item:h }}</td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="text-muted">Exibindo até 50 registros.</p>
+    </div>
+  {% else %}
+    <div class="alert alert-warning">Nenhum registro encontrado para os filtros selecionados.</div>
+  {% endif %}
+
+  <div class="d-flex gap-2 mt-3">
+    <a href="{% url 'relatorios:exportar_relatorio' execucao.id %}" class="btn btn-outline-primary">Exportar</a>
+    <a href="{% url 'relatorios:executar_relatorio' template.id %}" class="btn btn-secondary">Executar novamente</a>
+  </div>
+</div>
+{% endblock %}

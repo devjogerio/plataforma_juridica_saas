@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans 'Testar Filtro' %} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Cabeçalho -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">{% trans 'Testar Filtro' %}</h1>
+                    <p class="text-muted mb-0">
+                        {% trans 'Teste o filtro' %} "{{ filtro.nome }}" {% trans 'em tempo real' %}
+                    </p>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'relatorios:detalhe_filtro' filtro.pk %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> {% trans 'Voltar' %}
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Informações do Filtro -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans 'Informações do Filtro' %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong>{% trans 'Nome:' %}</strong>
+                                <span class="ms-2">{{ filtro.nome }}</span>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>{% trans 'Tipo:' %}</strong>
+                                <span class="badge bg-info ms-2">{{ filtro.get_tipo_display }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong>{% trans 'Status:' %}</strong>
+                                {% if filtro.ativo %}
+                                    <span class="badge bg-success ms-2">{% trans 'Ativo' %}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary ms-2">{% trans 'Inativo' %}</span>
+                                {% endif %}
+                            </div>
+                            
+                            {% if filtro.descricao %}
+                                <div class="mb-3">
+                                    <strong>{% trans 'Descrição:' %}</strong>
+                                    <p class="ms-2 mb-0">{{ filtro.descricao }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resultados do Teste -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans 'Resultados do Teste' %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if erro %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>{% trans 'Erro:' %}</strong> {{ erro }}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            <strong>{% trans 'Sucesso!' %}</strong>
+                            {% trans 'Filtro aplicado com sucesso.' %}
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-primary">{{ total_registros }}</h3>
+                                        <p class="mb-0">{% trans 'Registros Encontrados' %}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-success">{{ amostra_registros|length }}</h3>
+                                        <p class="mb-0">{% trans 'Registros na Amostra' %}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if total_registros > 0 %}
+                            <h6>{% trans 'Amostra de Registros' %}</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            {% if tipo_entidade == 'processo' %}
+                                                <th>{% trans 'Número do Processo' %}</th>
+                                                <th>{% trans 'Cliente' %}</th>
+                                                <th>{% trans 'Status' %}</th>
+                                            {% elif tipo_entidade == 'cliente' %}
+                                                <th>{% trans 'Nome/Razão Social' %}</th>
+                                                <th>{% trans 'Tipo' %}</th>
+                                                <th>{% trans 'Cidade' %}</th>
+                                            {% endif %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for registro in amostra_registros %}
+                                            <tr>
+                                                <td>{{ registro.id }}</td>
+                                                {% if tipo_entidade == 'processo' %}
+                                                    <td>{{ registro.numero_processo }}</td>
+                                                    <td>{{ registro.cliente.nome_razao_social }}</td>
+                                                    <td>
+                                                        <span class="badge bg-{{ registro.status|lower }}">
+                                                            {{ registro.get_status_display }}
+                                                        </span>
+                                                    </td>
+                                                {% elif tipo_entidade == 'cliente' %}
+                                                    <td>{{ registro.nome_razao_social }}</td>
+                                                    <td>
+                                                        <span class="badge bg-info">
+                                                            {{ registro.get_tipo_pessoa_display }}
+                                                        </span>
+                                                    </td>
+                                                    <td>{{ registro.cidade }}</td>
+                                                {% endif %}
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            {% if total_registros > 10 %}
+                                <div class="alert alert-info mt-3">
+                                    <i class="fas fa-info-circle"></i>
+                                    {% trans 'Mostrando apenas os primeiros 10 registros.' %}
+                                    {% trans 'Total de registros:' %} <strong>{{ total_registros }}</strong>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">{% trans 'Nenhum registro encontrado' %}</h5>
+                                <p class="text-muted">
+                                    {% trans 'O filtro não retornou nenhum resultado para os critérios especificados.' %}
+                                </p>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar com Ações -->
+        <div class="col-lg-4">
+            <!-- Ações Rápidas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans 'Ações Rápidas' %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'relatorios:executar_relatorio' %}?filtro={{ filtro.pk }}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-file-export"></i> {% trans 'Executar Relatório' %}
+                        </a>
+                        
+                        <a href="{% url 'relatorios:detalhe_filtro' filtro.pk %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-info-circle"></i> {% trans 'Ver Detalhes' %}
+                        </a>
+                        
+                        {% if filtro.usuario_criador == request.user %}
+                            <a href="{% url 'relatorios:editar_filtro' filtro.pk %}" class="btn btn-outline-warning">
+                                <i class="fas fa-edit"></i> {% trans 'Editar Filtro' %}
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Informações Técnicas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans 'Informações Técnicas' %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>{% trans 'Tipo de Entidade:' %}</strong>
+                        <span class="badge bg-info ms-2">{{ filtro.get_tipo_display }}</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>{% trans 'Configuração:' %}</strong>
+                        <br>
+                        <small class="text-muted">
+                            {% trans 'O filtro está configurado com condições avançadas.' %}
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>{% trans 'Criado em:' %}</strong>
+                        <br>
+                        <small class="text-muted">
+                            {{ filtro.data_criacao|date:'d/m/Y H:i' }}
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>{% trans 'Criado por:' %}</strong>
+                        <br>
+                        <small class="text-muted">
+                            {{ filtro.usuario_criador.get_full_name|default:filtro.usuario_criador.username }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

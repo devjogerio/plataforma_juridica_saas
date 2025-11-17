@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{# Template: Detalhe de DashboardPersonalizado
+   Context: dashboard (DashboardPersonalizado) #}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="h4 mb-3">{{ dashboard.nome }}</h1>
+  <pre class="bg-light p-3">{{ dashboard.configuracao|default:dashboard.layout_json }}</pre>
+  <a href="{% url 'relatorios:dashboards' %}" class="btn btn-secondary">Voltar</a>
+</div>
+{% endblock %}
