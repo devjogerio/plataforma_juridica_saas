@@ -19,17 +19,18 @@ from usuarios.api_views import UsuarioViewSet
 router = DefaultRouter()
 
 # Registrar ViewSets
-router.register(r'processos', ProcessoViewSet)
-router.register(r'andamentos', AndamentoViewSet)
-router.register(r'prazos', PrazoViewSet)
-router.register(r'clientes', ClienteViewSet)
-router.register(r'documentos', DocumentoViewSet)
-router.register(r'usuarios', UsuarioViewSet)
+router.register(r'processos', ProcessoViewSet, basename='processos')
+router.register(r'andamentos', AndamentoViewSet, basename='andamentos')
+router.register(r'prazos', PrazoViewSet, basename='prazos')
+router.register(r'clientes', ClienteViewSet, basename='clientes')
+router.register(r'documentos', DocumentoViewSet, basename='documentos')
+router.register(r'usuarios', UsuarioViewSet, basename='usuarios')
 
 # ViewSets que serão implementados posteriormente
 # router.register(r'honorarios', HonorarioViewSet)
 # router.register(r'despesas', DespesaViewSet)
 # router.register(r'relatorios', RelatorioViewSet)
+
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -48,18 +49,20 @@ def api_status(request):
         }
     })
 
+
 urlpatterns = [
     # Autenticação JWT
     path('auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/verify/', TokenVerifyView.as_view(), name='token_verify'),
-    
+
     # Status da API
     path('status/', api_status, name='api_status'),
-    
+
     # Endpoints customizados
     path('forms/', include('core.api_urls')),
-    
+
     # ViewSets registrados no router
     path('', include(router.urls)),
 ]
+app_name = 'api'

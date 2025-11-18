@@ -214,6 +214,16 @@ class PrazoFactory(DjangoModelFactory):
     descricao = Faker('text', max_nb_chars=200)
     usuario_responsavel = SubFactory(UserFactory)
 
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        dv = kwargs.pop('data_vencimento', None)
+        if dv and 'data_limite' not in kwargs:
+            kwargs['data_limite'] = dv
+        resp = kwargs.pop('responsavel', None)
+        if resp and 'usuario_responsavel' not in kwargs:
+            kwargs['usuario_responsavel'] = resp
+        return super()._create(model_class, *args, **kwargs)
+
 
 class TipoDocumentoFactory(DjangoModelFactory):
     """Factory para tipos de documento"""
@@ -248,6 +258,29 @@ class DocumentoFactory(DjangoModelFactory):
             arquivo=factory.django.ImageField(filename='test_image.jpg'),
             extensao='jpg'
         )
+
+    @factory.post_generation
+    def nome(self, create, extracted, **kwargs):
+        if extracted:
+            self.nome_arquivo = extracted
+            if create:
+                self.save(update_fields=['nome_arquivo'])
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        nome = kwargs.pop('nome', None)
+        if nome and 'nome_arquivo' not in kwargs:
+            kwargs['nome_arquivo'] = nome
+        tipo = kwargs.get('tipo_documento')
+        if isinstance(tipo, str):
+            from documentos.models import TipoDocumento
+            tipo_obj, _ = TipoDocumento.objects.get_or_create(nome=tipo)
+            kwargs['tipo_documento'] = tipo_obj
+        arquivo = kwargs.get('arquivo')
+        if isinstance(arquivo, str):
+            from django.core.files.base import ContentFile
+            kwargs['arquivo'] = ContentFile(b'', name=arquivo)
+        return super()._create(model_class, *args, **kwargs)
 
 
 # Factories para cenários específicos de teste

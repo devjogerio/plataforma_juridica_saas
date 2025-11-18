@@ -7,6 +7,7 @@ from django.utils import timezone
 class TipoNotificacao(models.TextChoices):
     """Tipos de notificação disponíveis"""
     PRAZO_CRITICO = 'prazo_critico', 'Prazo Crítico'
+    PRAZO_VENCIMENTO = 'prazo_vencimento', 'Prazo Vencendo'
     PRAZO_VENCIDO = 'prazo_vencido', 'Prazo Vencido'
     NOVO_ANDAMENTO = 'novo_andamento', 'Novo Andamento'
     DOCUMENTO_UPLOAD = 'documento_upload', 'Documento Enviado'
@@ -140,6 +141,13 @@ class Notificacao(models.Model):
             self.lida = True
             self.lida_em = timezone.now()
             self.save(update_fields=['lida', 'lida_em'])
+    
+    @property
+    def conteudo(self):
+        texto = self.mensagem or ''
+        if self.objeto_id:
+            return f"{texto} {self.objeto_id}"
+        return texto
     
     def is_expirada(self):
         """Verifica se a notificação está expirada"""

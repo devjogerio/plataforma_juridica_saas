@@ -238,6 +238,25 @@ class Documento(models.Model):
     def __str__(self):
         return f"{self.nome_arquivo} - {self.processo.numero_processo}"
     
+    @property
+    def nome(self):
+        return self.nome_arquivo
+    
+    @nome.setter
+    def nome(self, value):
+        self.nome_arquivo = value
+    
+    @property
+    def data_upload(self):
+        return self.created_at
+    
+    @property
+    def tipo(self):
+        try:
+            return self.tipo_documento.nome
+        except Exception:
+            return None
+    
     def save(self, *args, **kwargs):
         """Override do save para calcular metadados automaticamente."""
         if self.arquivo:

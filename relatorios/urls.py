@@ -10,6 +10,7 @@ urlpatterns = [
     
     # Relatórios básicos
     path('processos/', views.RelatorioProcessosView.as_view(), name='relatorio_processos'),
+    path('clientes/excel/', views.ClientesExcelExportView.as_view(), name='clientes_excel'),
     
     # Filtros Avançados
     path('filtros/', views.ListaFiltrosView.as_view(), name='lista_filtros'),

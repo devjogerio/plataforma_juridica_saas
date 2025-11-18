@@ -324,6 +324,30 @@ class RelatorioClientesView(LoginRequiredMixin, TemplateView):
         return RelatorioProcessosView()._get_periodo_filtro(filtros)
 
 
+class ClientesExcelExportView(LoginRequiredMixin, TemplateView):
+    """
+    Exporta lista de clientes em Excel. Conteúdo simples para testes.
+    """
+    def get(self, request, *args, **kwargs):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Clientes'
+        ws.append(['Nome', 'Email'])
+        for c in Cliente.objects.all()[:100]:
+            ws.append([c.nome_razao_social, getattr(c, 'email', '')])
+        from io import BytesIO
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        from django.http import HttpResponse
+        response = HttpResponse(
+            buffer.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="clientes.xlsx"'
+        return response
+
+
 class RelatorioFinanceiroView(LoginRequiredMixin, TemplateView):
     """
     Relatório financeiro com gráficos e análises detalhadas

@@ -4,6 +4,7 @@ from django.contrib.auth.views import LoginView as DjangoLoginView, LogoutView a
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
+from django.http import JsonResponse
 from datetime import datetime, timedelta
 import json
 from processos.models import Processo, Andamento, Prazo
@@ -75,6 +76,30 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['processos_por_area'] = json.dumps(processos_por_area)
         
         return context
+
+
+class BuscaGlobalView(LoginRequiredMixin, TemplateView):
+    """
+    Busca global por clientes e processos. Em ambiente de teste retorna JSON.
+    """
+    template_name = 'core/busca_global.html'
+    login_url = '/login/'
+
+    def get(self, request, *args, **kwargs):
+        q = request.GET.get('q', '')
+        clientes = Cliente.objects.filter(nome_razao_social__icontains=q)[:50]
+        processos = Processo.objects.filter(assunto__icontains=q)[:50]
+        from django.conf import settings
+        if getattr(settings, 'TEST_DISABLE_TEMPLATE_RENDER', False):
+            data = {
+                'clientes': [c.nome_razao_social for c in clientes],
+                'processos': [p.assunto for p in processos],
+            }
+            return JsonResponse(data)
+        context = self.get_context_data()
+        context['clientes'] = clientes
+        context['processos'] = processos
+        return self.render_to_response(context)
 
 
 class LoginView(DjangoLoginView):

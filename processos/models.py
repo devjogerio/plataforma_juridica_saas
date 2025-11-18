@@ -1022,7 +1022,7 @@ class Processo(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.numero_processo} - {self.cliente.nome_razao_social}"
+        return f"{self.numero_processo}"
     
     @property
     def valor_causa_formatado(self):
@@ -1030,6 +1030,22 @@ class Processo(models.Model):
         if self.valor_causa:
             return f"R$ {self.valor_causa:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
         return 'Não informado'
+
+    @property
+    def responsavel(self):
+        return self.usuario_responsavel
+    
+    @responsavel.setter
+    def responsavel(self, value):
+        self.usuario_responsavel = value
+    
+    @property
+    def data_distribuicao(self):
+        return self.data_inicio
+    
+    @data_distribuicao.setter
+    def data_distribuicao(self, value):
+        self.data_inicio = value
     
     @property
     def dias_tramitacao(self):
@@ -1196,7 +1212,7 @@ class Andamento(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.processo.numero_processo} - {self.get_tipo_andamento_display()} ({self.data_andamento.strftime('%d/%m/%Y')})"
+        return f"{self.get_tipo_andamento_display()} - {self.processo.numero_processo}"
 
 
 class Prazo(models.Model):
@@ -1308,8 +1324,8 @@ class Prazo(models.Model):
         ]
     
     def __str__(self):
-        status = '✓' if self.cumprido else '⏰'
-        return f"{status} {self.processo.numero_processo} - {self.get_tipo_prazo_display()} ({self.data_limite.strftime('%d/%m/%Y')})"
+        titulo = self.descricao or self.get_tipo_prazo_display()
+        return f"{titulo} - {self.data_limite.strftime('%d/%m/%Y')}"
     
     @property
     def dias_restantes(self):
@@ -1345,6 +1361,22 @@ class Prazo(models.Model):
         self.cumprido = True
         self.data_cumprimento = data_cumprimento or date.today()
         self.save()
+    
+    @property
+    def data_vencimento(self):
+        return self.data_limite
+    
+    @data_vencimento.setter
+    def data_vencimento(self, value):
+        self.data_limite = value
+
+    @property
+    def responsavel(self):
+        return self.usuario_responsavel
+    
+    @responsavel.setter
+    def responsavel(self, value):
+        self.usuario_responsavel = value
     
     def clean(self):
         """Validação customizada do modelo."""

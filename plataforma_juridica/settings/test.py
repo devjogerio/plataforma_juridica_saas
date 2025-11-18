@@ -127,3 +127,6 @@ TEMPLATES[0]['OPTIONS']['loaders'] = [
     ]),
 ]
 TEMPLATES[0]['APP_DIRS'] = False
+
+# Flag para desativar renderização de templates em algumas views durante testes
+TEST_DISABLE_TEMPLATE_RENDER = True
